@@ -6,7 +6,18 @@
   <h1 style="margin-bottom: 0;">mond</h1>
 </div>
 
-<p align="left">Edit MobileGestalt on iOS 27.0 beta 1 - 4!</p>
+<p align="left">
+  Edit MobileGestalt on iOS 27.0 beta 1 - 4!<br>
+  <a href="https://discord.gg/gw8PcRF3Jr">
+    <img src="https://img.shields.io/badge/Discord-Join%20Server-7289DA.svg" alt="Discord">
+  </a>
+  <a href="https://github.com/rooootdev/mond/stargazers">
+    <img src="https://img.shields.io/github/stars/rooootdev/mond?style=social" alt="GitHub stars">
+  </a>
+  <a href="https://github.com/rooootdev/mond/issues">
+    <img src="https://img.shields.io/github/issues/rooootdev/mond" alt="GitHub issues">
+  </a>
+</p>
 
 > [!WARNING]  
 > Some of the tweaks have the potential to brick your device! Use at your own risk.
