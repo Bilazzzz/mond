@@ -67,6 +67,12 @@
 </details><sup>
 NOTE: Some tweaks may not appear on your device because they aren't supported.</sup>
 
+**Known Issues:**<br>
+&#45; Tweaks may disappear on reboot<br>
+&#45; Apple Intelligence activation is broken<br>
+&#45; Disable Region restrictions may be broken on some versions/devices<br>
+&#45; iPadOS UI and related tweaks may not work and/or **bootloop** you!
+
 **Credits:**<br>
 &#45; [forcequit](https://github.com/forcequitOS) for his work on bad_query<br>
 &#45; [johnny](https://github.com/0xjohnnydev) for his work on the MCM bug class<br>
