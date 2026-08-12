@@ -1,17 +1,16 @@
 //
-//  ContentView.swift
+//  GestaltView.swift
 //  mond
 //
-//  Created by ruter on 16.07.26.
+//  Created by ruter on 11.08.26.
 //
 
 import SwiftUI
 import PartyUI
 
-struct ContentView: View {
+struct GestaltView: View {
     @EnvironmentObject var state: AppState
     @AppStorage("mg_devicename") private var mg_devicename: String = ""
-    @AppStorage("token") private var token: String = ""
     
     @State private var mg_dict_now: NSMutableDictionary = NSMutableDictionary()
     @State private var is_valid: Bool = false
@@ -35,10 +34,6 @@ struct ContentView: View {
               let size = attributes[.size] as? UInt64 else { return false }
 
         return size == 0
-    }
-    
-    var valid: Bool {
-        (sandbox_extension_consume(token) ?? -1) >= 0
     }
 
     var selected_st_value: Int {
@@ -192,7 +187,7 @@ struct ContentView: View {
                         infoType: .info,
                         infoMessage: "How to use this tweak:\n1. Spoof to the model next to the first one supported by Apple Intelligence.\n2. Spoof back to your model.\n3. Spoof to your final model and you should see the Apple Intelligence icon in Settings.\n4. Connect iPhone to power and leave the Settings > Storage tab open for ~1 hour.\n\nNOTE: Do not spoof back.",
                         minSupportedVersion: 18.1,
-                        isOn: mg_key_binding(["A62OafQ85EJAiiqKn4agtg"])
+                        isOn: mg_apple_intelligence_binding()
                     )
                     
                     HStack(spacing: 10) {
@@ -269,13 +264,6 @@ struct ContentView: View {
             .navigationTitle("mond")
             .tint(Color("AccentColor"))
             .onAppear {
-                if !valid {
-                    state.exploit_succeeded = grant_mg_write() >= 0
-                } else {
-                    print("(mond) valid token saved, skipping exploit")
-                    state.exploit_succeeded = true
-                }
-                
                 mg_load()
             }
             .toolbar {
@@ -362,7 +350,6 @@ struct ContentView: View {
             
             let artwork_dict = cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
             artwork_dict["ArtworkDeviceSubType"] = selected_st_value
-            
             if enable_devicename {
                 artwork_dict["ArtworkDeviceProductDescription"] = mg_devicename
             }
@@ -498,27 +485,6 @@ struct ContentView: View {
         )
     }
     
-    private func mg_internal_binding() -> Binding<Bool> {
-        guard let cache_data = mg_dict_now["CacheData"] as? NSMutableData else {
-            return .constant(false)
-        }
-        
-        let off_apple_internal_install = cache_data_offset("EqrsVvjcYDdxHBiQmGhAWw")
-        let off_has_internal_settings_bundle = cache_data_offset("Oji6HRoPi7rH7HPdWVakuw")
-        let off_internal_build = cache_data_offset("LBJfwOEzExRxzlAnSuI7eg")
-        
-        return Binding(
-            get: {
-                return cache_data.bytes.load(fromByteOffset: off_apple_internal_install, as: Int.self) == 1
-            },
-            set: { enabled in
-                cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_apple_internal_install, as: Int.self)
-                cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_has_internal_settings_bundle, as: Int.self)
-                cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_internal_build, as: Int.self)
-            }
-        )
-    }
-
     private func mg_apple_intelligence_binding() -> Binding<Bool> {
         guard let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary else {
             return .constant(false)
@@ -545,6 +511,27 @@ struct ContentView: View {
                 } else {
                     cache_extra.removeObject(forKey: key)
                 }
+            }
+        )
+    }
+    
+    private func mg_internal_binding() -> Binding<Bool> {
+        guard let cache_data = mg_dict_now["CacheData"] as? NSMutableData else {
+            return .constant(false)
+        }
+        
+        let off_apple_internal_install = cache_data_offset("EqrsVvjcYDdxHBiQmGhAWw")
+        let off_has_internal_settings_bundle = cache_data_offset("Oji6HRoPi7rH7HPdWVakuw")
+        let off_internal_build = cache_data_offset("LBJfwOEzExRxzlAnSuI7eg")
+        
+        return Binding(
+            get: {
+                return cache_data.bytes.load(fromByteOffset: off_apple_internal_install, as: Int.self) == 1
+            },
+            set: { enabled in
+                cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_apple_internal_install, as: Int.self)
+                cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_has_internal_settings_bundle, as: Int.self)
+                cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_internal_build, as: Int.self)
             }
         )
     }

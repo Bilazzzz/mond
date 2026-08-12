@@ -12,8 +12,10 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var state: AppState
     
-    @AppStorage("token") private var token: String = ""
     @AppStorage("method") private var method: String = "bad_query"
+    @AppStorage("ka_on") private var ka_on = true
+    @AppStorage("token") private var token: String = ""
+    
     @State private var show_confirm: Bool = false
     
     var valid: Bool {
@@ -65,10 +67,21 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    LogView()
-                        .modifier(TerminalPlatter())
+                    Picker("Method", selection: $method) {
+                        Text("bad_query").tag("bad_query")
+                        Text("cmg").tag("cmg")
+                    }
+                    .pickerStyle(.segmented)
+                    
+                    Button {
+                        grant_all(state: state)
+                    } label: {
+                        Text("Run Exploit")
+                    }
                 } header: {
-                    Label("Logs", systemImage: "apple.terminal")
+                    Label("Exploit", systemImage: "wrench.and.screwdriver")
+                } footer: {
+                    Text(method == "cmg" ? "**CMG:** Supports iOS 27.0 b1 - b4. PosterBoard wont work with this method. Only use this when bad_query isnt working for you." : "**bad_query:** Supports iOS 27.0 b1 - b4. By [forcequit](https://github.com/forcequitOS).")
                 }
                 
                 Section {
@@ -118,21 +131,16 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    Picker("Method", selection: $method) {
-                        Text("bad_query").tag("bad_query")
-                        Text("cmg").tag("cmg")
-                    }
-                    .pickerStyle(.segmented)
-                    
-                    Button {
-                        _ = grant_mg_write()
-                    } label: {
-                        Text("Run Exploit")
-                    }
+                    Toggle("Keep Alive", isOn: $ka_on)
+                        .onChange(of: ka_on) { _, enabled in
+                            if enabled {
+                                keep_alive()
+                            } else {
+                                let_die()
+                            }
+                        }
                 } header: {
-                    Label("Exploit", systemImage: "wrench.and.screwdriver")
-                } footer: {
-                    Text(method == "cmg" ? "**CMG:** Supports iOS 27.0 b1 - b4. You should use bad_query over this..." : "**bad_query:** Supports iOS 27.0 b1 - b4. By [forcequit](https://github.com/forcequitOS).")
+                    Label("Settings", systemImage: "gear")
                 }
                 
                 Section {
@@ -143,6 +151,8 @@ struct SettingsView: View {
                     }
                 } header: {
                     Label("Tools", systemImage: "wrench.and.screwdriver")
+                } footer: {
+                    Text("Respring method by [neon](https://github.com/neonmodder123), swift implementation by [skadz](https://github.com/skadz108).")
                 }
                 
                 Section {
