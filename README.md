@@ -23,7 +23,7 @@
 > Some of the tweaks have the potential to brick your device! Use at your own risk.
 
 **Planned:**<br>
-&#45; HouseArrest file browser (iOS 18 - 27?)
+&#45; HouseArrest file browser (iOS 18 - 27?)<br>
 &#45; Pocket Poster
 
 <details>
