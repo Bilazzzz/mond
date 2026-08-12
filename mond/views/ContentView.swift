@@ -17,9 +17,11 @@ struct ContentView: View {
     @State private var is_valid: Bool = false
     
     @State private var subtype: Int = 0
-    @State private var og_subtype: Int = 0
-    @State private var og_devicename: String = ""
+    @State private var og_st: Int = 0
+    @State private var selected_st: String = ""
+    
     @State private var enable_devicename: Bool = false
+    @State private var og_devicename: String = ""
     @State private var product_type: String = ""
     
     @State private var show_settings: Bool = false
@@ -38,6 +40,31 @@ struct ContentView: View {
     
     var valid: Bool {
         (sandbox_extension_consume(token) ?? -1) >= 0
+    }
+
+    var selected_st_value: Int {
+        switch selected_st {
+            case "og":
+                return og_st
+            case "no_dynamic_island":
+                return 0
+            case "14p":
+                return 2436
+            case "14pm":
+                return 2796
+            case "15pm":
+                return 2976
+            case "16p":
+                return 2622
+            case "16pm":
+                return 2868
+            case "air":
+                return 2736
+            case "x":
+                return 2436
+            default:
+                return 0
+        }
     }
     
     var body: some View {
@@ -76,23 +103,28 @@ struct ContentView: View {
                 }
                 
                 Section {
-                    Picker(selection: $subtype) {
-                        Text("Original (\(og_subtype))").tag(og_subtype)
+                    Picker(selection: $selected_st) {
+                        Text("Original (\(og_st))").tag("og")
+                        
                         if is_device_good() {
-                            Text("Disable Dynamic Island").tag(2436)
+                            Text("Disable Dynamic Island").tag("no_dynamic_island")
                         }
-                        Text("iPhone 14 Pro").tag(2436)
-                        Text("iPhone 14 Pro Max").tag(2796)
-                        Text("iPhone 15 Pro Max").tag(2976)
+                    
+                        Text("iPhone 14 Pro").tag("14p")
+                        Text("iPhone 14 Pro Max").tag("14pm")
+                        Text("iPhone 15 Pro Max").tag("15pm")
+                    
                         if doubleSystemVersion() >= 18.0 {
-                            Text("iPhone 16 Pro").tag(2622)
-                            Text("iPhone 16 Pro Max").tag(2868)
+                            Text("iPhone 16 Pro").tag("16p")
+                            Text("iPhone 16 Pro Max").tag("16pm")
                         }
+                    
                         if doubleSystemVersion() >= 26.0 {
-                            Text("iPhone Air").tag(2736)
+                            Text("iPhone Air").tag("air")
                         }
+                    
                         if hasHomeButton() {
-                            Text("iPhone X Gestures").tag(2436)
+                            Text("iPhone X Gestures").tag("x")
                         }
                     } label: {
                         HStack {
@@ -284,7 +316,7 @@ struct ContentView: View {
             let og_artwork = og_cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
             
             guard let ogSubtype = og_artwork["ArtworkDeviceSubType"] as? Int else { throw MGViewError.missingArtworkSubtype }
-            og_subtype = ogSubtype
+            og_st = ogSubtype
             
             guard let ogDeviceName = og_artwork["ArtworkDeviceProductDescription"] as? String else { throw MGViewError.missingArtworkDeviceName }
             
@@ -320,7 +352,8 @@ struct ContentView: View {
             }
             
             let artwork_dict = cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
-            artwork_dict["ArtworkDeviceSubType"] = subtype
+            artwork_dict["ArtworkDeviceSubType"] = selected_st_value
+            
             if enable_devicename {
                 artwork_dict["ArtworkDeviceProductDescription"] = mg_devicename
             }
