@@ -10,7 +10,13 @@ import Darwin
 import MachO
 import UIKit
 
+var _cache_data_offsets: [String: Int] = [:]
+
 func cache_data_offset(_ key: String) -> Int {
+    if let cached = _cache_data_offsets[key] {
+        return cached
+    }
+
     let lib_mg = "/usr/lib/libMobileGestalt.dylib"
     dlopen(lib_mg, RTLD_GLOBAL)
 
@@ -24,7 +30,8 @@ func cache_data_offset(_ key: String) -> Int {
     guard let header else { return 0 }
 
     var text_size = 0
-    let cstr = getsectiondata(header, "__TEXT", "__cstring", &text_size)!.withMemoryRebound(to: CChar.self, capacity: text_size) { $0 }
+    guard let cstring = getsectiondata(header, "__TEXT", "__cstring", &text_size) else { return 0 }
+    let cstr = cstring.withMemoryRebound(to: CChar.self, capacity: text_size) { $0 }
 
     var key_ptr = cstr
     while Int(key_ptr - cstr) < text_size {
@@ -37,13 +44,16 @@ func cache_data_offset(_ key: String) -> Int {
     if ptr == nil {
         ptr = getsectiondata(header, "__DATA_CONST", "__const", &const_size)?.withMemoryRebound(to: UInt.self, capacity: const_size / 8) { $0 }
     }
-    
+
     guard let ptr else { return 0 }
     for i in 0..<const_size / 8 {
         if ptr[i] == UInt(bitPattern: key_ptr) {
-            return Int((ptr.advanced(by: i).withMemoryRebound(to: UInt16.self, capacity: 1) { $0[0x9a / 2] }) << 3)
+            let offset = Int((ptr.advanced(by: i).withMemoryRebound(to: UInt16.self, capacity: 1) { $0[0x9a / 2] }) << 3)
+            _cache_data_offsets[key] = offset
+            return offset
         }
     }
-    
+
+    _cache_data_offsets[key] = 0
     return 0
 }

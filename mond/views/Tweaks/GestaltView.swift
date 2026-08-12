@@ -13,7 +13,9 @@ struct GestaltView: View {
     @AppStorage("mg_devicename") private var mg_devicename: String = ""
     
     @State private var mg_dict_now: NSMutableDictionary = NSMutableDictionary()
-    @State private var is_valid: Bool = false
+    @State private var is_valid: Bool = true
+    @State private var is_empty: Bool = false
+    @State private var is_loading: Bool = false
     
     @State private var og_st: Int = 0
     @State private var selected_st: String = ""
@@ -24,18 +26,6 @@ struct GestaltView: View {
     
     @State private var show_settings: Bool = false
     
-    private var mg_valid: Bool {
-        guard let data = try? Data(contentsOf: URL(fileURLWithPath: TweakPaths.gestalt)) else { return false }
-        return (try? PropertyListSerialization.propertyList(from: data, options: [], format: nil)) != nil
-    }
-    
-    private var mg_empty: Bool {
-        guard let attributes = try? FileManager.default.attributesOfItem(atPath: TweakPaths.gestalt),
-              let size = attributes[.size] as? UInt64 else { return false }
-
-        return size == 0
-    }
-
     var selected_st_value: Int {
         switch selected_st {
             case "og":
@@ -76,13 +66,13 @@ struct GestaltView: View {
     var body: some View {
         NavigationStack {
             List {
-                if !mg_valid || mg_empty {
+                if !is_valid || is_empty {
                     Section {
-                        if mg_empty {
+                        if is_empty {
                             PlainAlert(title: "Do not reboot!", icon: "exclamationmark.triangle.fill", text: "Your MobileGestalt.plist seems to be empty.", color: Color.yellow)
                         }
                         
-                        if !mg_valid {
+                        if !is_valid {
                             PlainAlert(title: "Do not reboot!", icon: "exclamationmark.triangle.fill", text: "Your MobileGestalt.plist seems to be invalid.", color: Color.yellow)
                         }
                     } header: {
@@ -298,46 +288,66 @@ struct GestaltView: View {
     }
     
     private func mg_load() {
-        do {
-            let mg_url_now = URL(fileURLWithPath: TweakPaths.gestalt)
-            mg_dict_now = try NSMutableDictionary(contentsOf: mg_url_now, error: ())
-            
-            // this'll cache gestalt and put it in a safe place
-            let mg_url_saved = URL(fileURLWithPath: AppPaths.backups).appendingPathComponent("SavedGestalt.plist")
-            
-            if !FileManager.default.fileExists(atPath: mg_url_saved.path) {
-                try FileManager.default.copyItem(at: mg_url_now, to: mg_url_saved)
+        guard !is_loading, mg_dict_now.count == 0 else { return }
+        is_loading = true
+
+        let mg_url_now = URL(fileURLWithPath: TweakPaths.gestalt)
+
+        DispatchQueue.global(qos: .userInitiated).async { [self] in
+            do {
+                let file_size = (try? FileManager.default.attributesOfItem(atPath: mg_url_now.path))?[.size] as? UInt64 ?? 0
+
+                let loaded_dict = try NSMutableDictionary(contentsOf: mg_url_now, error: ())
+
+                // this'll cache gestalt and put it in a safe place
+                let mg_url_saved = URL(fileURLWithPath: AppPaths.backups).appendingPathComponent("SavedGestalt.plist")
+
+                if !FileManager.default.fileExists(atPath: mg_url_saved.path) {
+                    try FileManager.default.copyItem(at: mg_url_now, to: mg_url_saved)
+                }
+
+                // get original gestalt values
+                let mg_saved_dict = try NSMutableDictionary(contentsOf: mg_url_saved, error: ())
+                let og_cache_extra = mg_saved_dict["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
+                let og_artwork = og_cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
+
+                guard let og_subtype = og_artwork["ArtworkDeviceSubType"] as? Int else { throw MGViewError.missingArtworkSubtype }
+                guard let og_devicename = og_artwork["ArtworkDeviceProductDescription"] as? String else { throw MGViewError.missingArtworkDeviceName }
+
+                let cache_extra = loaded_dict["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
+                let artwork = cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
+
+                let new_selected_st = self.st_to_sel[artwork["ArtworkDeviceSubType"] as? Int ?? og_subtype] ?? "og"
+                let new_devicename = artwork["ArtworkDeviceProductDescription"] as? String ?? og_devicename
+                let new_enable_devicename = new_devicename != og_devicename
+
+                let new_product_type: String
+                if let productType = cache_extra["h9jDsbgj7xIVeIQ8S3/X3Q"] as? String, !productType.isEmpty {
+                    new_product_type = productType
+                } else {
+                    new_product_type = self.machine_name()
+                }
+
+                DispatchQueue.main.async {
+                    self.mg_dict_now = loaded_dict
+                    self.og_st = og_subtype
+                    self.selected_st = new_selected_st
+                    self.mg_devicename = new_devicename
+                    self.enable_devicename = new_enable_devicename
+                    self.product_type = new_product_type
+                    self.is_valid = true
+                    self.is_empty = file_size == 0
+                    self.is_loading = false
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    print("(mg) failed to load data: \(error)")
+                    self.is_valid = false
+                    self.is_empty = (try? FileManager.default.attributesOfItem(atPath: mg_url_now.path))?[.size] as? UInt64 == 0
+                    self.is_loading = false
+                    Alertinator.shared.alert(title: "Failed to load current MobileGestalt!", body: "Restart the app and try again. Check logs for more detailed information.")
+                }
             }
-            
-            // get original gestalt values
-            let mg_saved_dict = try NSMutableDictionary(contentsOf: mg_url_saved, error: ())
-            let og_cache_extra = mg_saved_dict["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
-            let og_artwork = og_cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
-            
-            guard let og_subtype = og_artwork["ArtworkDeviceSubType"] as? Int else { throw MGViewError.missingArtworkSubtype }
-            og_st = og_subtype
-            
-            guard let og_devicename = og_artwork["ArtworkDeviceProductDescription"] as? String else { throw MGViewError.missingArtworkDeviceName }
-            
-            let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
-            let artwork = cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
-            
-            selected_st = st_to_sel[artwork["ArtworkDeviceSubType"] as? Int ?? og_subtype] ?? "og"
-            mg_devicename = artwork["ArtworkDeviceProductDescription"] as? String ?? og_devicename
-            
-            // assume it's been changed
-            if mg_devicename != og_devicename {
-                enable_devicename = true
-            }
-            
-            if let productType = cache_extra["h9jDsbgj7xIVeIQ8S3/X3Q"] as? String, !productType.isEmpty {
-                product_type = productType
-            } else {
-                product_type = machine_name()
-            }
-        } catch {
-            print("(mg) failed to load data: \(error)")
-            Alertinator.shared.alert(title: "Failed to load current MobileGestalt!", body: "Restart the app and try again. Check logs for more detailed information.")
         }
     }
     

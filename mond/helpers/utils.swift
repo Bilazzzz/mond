@@ -36,7 +36,7 @@ func hasHomeButton() -> Bool {
         .compactMap { $0 as? UIWindowScene }
         .flatMap { $0.windows }
 
-    return windows.first(where: { $0.isKeyWindow })?.safeAreaInsets.bottom ?? 0 > 0
+    return (windows.first(where: { $0.isKeyWindow })?.safeAreaInsets.bottom ?? 0) == 0
 }
 
 enum AppPaths {
