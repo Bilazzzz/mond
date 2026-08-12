@@ -411,17 +411,17 @@ struct GestaltView: View {
     }
     
     private func mg_key_binding<T: Equatable>(_ keys: [String], type: T.Type = Int.self, default_val: T? = 0, on_val: T? = 1) -> Binding<Bool>  {
-        guard let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary else {
-            return .constant(false)
-        }
-        
         return Binding(get: {
-            if let value = cache_extra[keys.first!] as? T?, let on_val {
-                return value == on_val
+            guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary,
+                  let on_val,
+                  let value = cache_extra[keys.first!] as? T? else {
+                return false
             }
             
-            return false
+            return value == on_val
         }, set: { enabled in
+            guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
+            
             for key in keys {
                 // if it exists inside of the plist, then update it. if not then pull the value completely.
                 if enabled {
@@ -434,11 +434,6 @@ struct GestaltView: View {
     }
     
     private func mg_trollpad_binding() -> Binding<Bool> {
-        guard let cache_data = mg_dict_now["CacheData"] as? NSMutableData,
-                let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary else {
-            return .constant(false)
-        }
-        
         let value_off = cache_data_offset("mtrAoWJ3gsq+I90ZnQ0vQw")
         let keys = [
             "uKc7FPnEO++lVhHWHFlGbQ", // ipad
@@ -450,12 +445,17 @@ struct GestaltView: View {
         ]
         
         return Binding(get: {
+            guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return false }
+            
             if let value = cache_extra[keys.first!] as? Int? {
                 return value == 1
             }
             
             return false
         }, set: { enabled in
+            guard let cache_data = self.mg_dict_now["CacheData"] as? NSMutableData,
+                  let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
+            
             if enabled {
                 Alertinator.shared.alert(title: "Warning!", body: "This is a very dangerous tweak to use! If you use an alphanumeric passcode, DO NOT USE THIS TWEAK AT ALL! Please do not turn off \"Show Dock In Stage Manager\" or your device will BOOTLOOP when rotating to landscape! With these two things in mind, you may experience general instability, or other major issues such as app data randomly disappearing. I'm honestly not too certain why you'd want to use this tweak anyways, it's not like your device is gonna be all that usable (due to apps scaling weirdly) when it's enabled.")
             }
@@ -473,16 +473,16 @@ struct GestaltView: View {
     }
     
     private func mg_region_restrict_binding() -> Binding<Bool> {
-        guard let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary else {
-            return .constant(false)
-        }
-        
         return Binding<Bool>(
             get: {
+                guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return false }
+                
                 return cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] as? String == "US" &&
                     cache_extra["zHeENZu+wbg7PUprwNwBWg"] as? String == "LL/A"
             },
             set: { enabled in
+                guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
+                
                 if enabled {
                     Alertinator.shared.alert(title: "Warning!", body: "Please do not use this feature to bypass region restrictions that would equate to breaking regional laws (e.g. disabling the camera shutter sound). We will NOT be held responsible for enabling any illegal activites!")
                     cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] = "US"
@@ -496,14 +496,12 @@ struct GestaltView: View {
     }
     
     private func mg_apple_intelligence_binding() -> Binding<Bool> {
-        guard let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary else {
-            return .constant(false)
-        }
-    
         let key = "A62OafQ85EJAiiqKn4agtg"
     
         return Binding<Bool>(
             get: {
+                guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return false }
+                
                 if let value = cache_extra[key] as? Int {
                     return value == 1
                 }
@@ -511,6 +509,8 @@ struct GestaltView: View {
                 return false
             },
             set: { enabled in
+                guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
+                
                 if enabled {
                     cache_extra[key] = 1
     
@@ -526,19 +526,19 @@ struct GestaltView: View {
     }
     
     private func mg_internal_binding() -> Binding<Bool> {
-        guard let cache_data = mg_dict_now["CacheData"] as? NSMutableData else {
-            return .constant(false)
-        }
-        
         let off_apple_internal_install = cache_data_offset("EqrsVvjcYDdxHBiQmGhAWw")
         let off_has_internal_settings_bundle = cache_data_offset("Oji6HRoPi7rH7HPdWVakuw")
         let off_internal_build = cache_data_offset("LBJfwOEzExRxzlAnSuI7eg")
         
         return Binding(
             get: {
+                guard let cache_data = self.mg_dict_now["CacheData"] as? NSMutableData else { return false }
+                
                 return cache_data.bytes.load(fromByteOffset: off_apple_internal_install, as: Int.self) == 1
             },
             set: { enabled in
+                guard let cache_data = self.mg_dict_now["CacheData"] as? NSMutableData else { return }
+                
                 cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_apple_internal_install, as: Int.self)
                 cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_has_internal_settings_bundle, as: Int.self)
                 cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_internal_build, as: Int.self)
