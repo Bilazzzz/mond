@@ -69,8 +69,9 @@ NOTE: Some tweaks may not appear on your device because they aren't supported.</
 
 **Known Issues:**<br>
 &#45; Tweaks may disappear on reboot<br>
+&#45; Apple Intelligence spoofing doesnt work on iPhone 15<br>
 &#45; Disable Region restrictions may be broken on some versions/devices<br>
-&#45; iPadOS UI and related tweaks may not work and/or **bootloop** you!
+&#45; iPadOS UI and related tweaks may not work and/or **bootloop** you!<br>
 
 **Credits:**<br>
 &#45; [forcequit](https://github.com/forcequitOS) for his work on bad_query<br>
