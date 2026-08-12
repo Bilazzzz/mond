@@ -16,7 +16,6 @@ struct ContentView: View {
     @State private var mg_dict_now: NSMutableDictionary = NSMutableDictionary()
     @State private var is_valid: Bool = false
     
-    @State private var subtype: Int = 0
     @State private var og_st: Int = 0
     @State private var selected_st: String = ""
     
@@ -315,21 +314,19 @@ struct ContentView: View {
             let og_cache_extra = mg_saved_dict["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
             let og_artwork = og_cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
             
-            guard let ogSubtype = og_artwork["ArtworkDeviceSubType"] as? Int else { throw MGViewError.missingArtworkSubtype }
-            og_st = ogSubtype
+            guard let og_subtype = og_artwork["ArtworkDeviceSubType"] as? Int else { throw MGViewError.missingArtworkSubtype }
+            og_st = og_subtype
             
-            guard let ogDeviceName = og_artwork["ArtworkDeviceProductDescription"] as? String else { throw MGViewError.missingArtworkDeviceName }
+            guard let og_devicename = og_artwork["ArtworkDeviceProductDescription"] as? String else { throw MGViewError.missingArtworkDeviceName }
             
-            // now get current gestalt values
             let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
-            
             let artwork = cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
             
-            subtype = artwork["ArtworkDeviceSubType"] as? Int ?? ogSubtype // fallback
-            mg_devicename = artwork["ArtworkDeviceProductDescription"] as? String ?? ogDeviceName
+            subtype = artwork["ArtworkDeviceSubType"] as? Int ?? og_subtype // fallback
+            mg_devicename = artwork["ArtworkDeviceProductDescription"] as? String ?? og_devicename
             
             // assume it's been changed
-            if mg_devicename != ogDeviceName {
+            if mg_devicename != og_devicename {
                 enable_devicename = true
             }
             
