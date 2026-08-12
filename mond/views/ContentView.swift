@@ -190,7 +190,7 @@ struct ContentView: View {
                     PlainToggle(
                         text: "Apple Intelligence",
                         infoType: .info,
-                        infoMessage: "Apple Intelligence activation is currently broken and may not work.",
+                        infoMessage: "How to use this tweak:\n1. Spoof to the model next to the first one supported by Apple Intelligence.\n2. Spoof back to your model.\n3. Spoof to your final model and you should see the Apple Intelligence icon in Settings.\n4. Connect iPhone to power and leave the Settings > Storage tab open for ~1 hour.\n\nNOTE: Do not spoof back.",
                         minSupportedVersion: 18.1,
                         isOn: mg_key_binding(["A62OafQ85EJAiiqKn4agtg"])
                     )
@@ -515,6 +515,36 @@ struct ContentView: View {
                 cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_apple_internal_install, as: Int.self)
                 cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_has_internal_settings_bundle, as: Int.self)
                 cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_internal_build, as: Int.self)
+            }
+        )
+    }
+
+    private func mg_apple_intelligence_binding() -> Binding<Bool> {
+        guard let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary else {
+            return .constant(false)
+        }
+    
+        let key = "A62OafQ85EJAiiqKn4agtg"
+    
+        return Binding<Bool>(
+            get: {
+                if let value = cache_extra[key] as? Int {
+                    return value == 1
+                }
+    
+                return false
+            },
+            set: { enabled in
+                if enabled {
+                    cache_extra[key] = 1
+    
+                    Alertinator.shared.alert(
+                        title: "Apple Intelligence Spoof",
+                        body: "How to use this tweak:\n1. Spoof to the model next to the first one supported by Apple Intelligence.\n2. Spoof back to your model.\n3. Spoof to your final model and you should see the Apple Intelligence icon in Settings.\n4. Connect iPhone to power and leave the Settings > Storage tab open for ~1 hour.\n\nNOTE: Do not spoof back."
+                    )
+                } else {
+                    cache_extra.removeObject(forKey: key)
+                }
             }
         )
     }
