@@ -435,37 +435,47 @@ struct GestaltView: View {
     
     private func mg_trollpad_binding() -> Binding<Bool> {
         let value_off = cache_data_offset("mtrAoWJ3gsq+I90ZnQ0vQw")
-        let keys = [
-            "uKc7FPnEO++lVhHWHFlGbQ", // ipad
-            "mG0AnH/Vy1veoqoLRAIgTA", // MedusaFloatingLiveAppCapability
-            "UCG5MkVahJxG1YULbbd5Bg", // MedusaOverlayAppCapability
-            "ZYqko/XM5zD3XBfN5RmaXA", // MedusaPinnedAppCapability
-            "nVh/gwNpy7Jv1NOk00CMrw", // MedusaPIPCapability,
-            "qeaj75wk3HF4DwQ8qbIi7g", // DeviceSupportsEnhancedMultitasking
+        let values: [String: Int] = [
+            "mG0AnH/Vy1veoqoLRAIgTA": 1, // MedusaFloatingLiveAppCapability
+            "UCG5MkVahJxG1YULbbd5Bg": 1, // MedusaOverlayAppCapability
+            "ZYqko/XM5zD3XBfN5RmaXA": 1, // MedusaPinnedAppCapability
+            "nVh/gwNpy7Jv1NOk00CMrw": 1, // MedusaPIPCapability
+            "uKc7FPnEO++lVhHWHFlGbQ": 1, // ipad
         ]
-        
+    
         return Binding(get: {
-            guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return false }
-            
-            if let value = cache_extra[keys.first!] as? Int? {
-                return value == 1
+            guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else {
+                return false
             }
-            
-            return false
+    
+            return values.allSatisfy { key, value in
+                (cache_extra[key] as? Int) == value
+            }
         }, set: { enabled in
             guard let cache_data = self.mg_dict_now["CacheData"] as? NSMutableData,
-                  let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
-            
-            if enabled {
-                Alertinator.shared.alert(title: "Warning!", body: "This is a very dangerous tweak to use! If you use an alphanumeric passcode, DO NOT USE THIS TWEAK AT ALL! Please do not turn off \"Show Dock In Stage Manager\" or your device will BOOTLOOP when rotating to landscape! With these two things in mind, you may experience general instability, or other major issues such as app data randomly disappearing. I'm honestly not too certain why you'd want to use this tweak anyways, it's not like your device is gonna be all that usable (due to apps scaling weirdly) when it's enabled.")
+                  let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else {
+                return
             }
-            
-            cache_data.mutableBytes.storeBytes(of: enabled ? 3 : 1, toByteOffset: value_off, as: Int.self)
-            
-            for key in keys {
-                if enabled {
-                    cache_extra[key] = 1
-                } else {
+    
+            if enabled {
+                Alertinator.shared.alert(
+                    title: "Warning!",
+                    body: "This is a very dangerous tweak to use! If you use an alphanumeric passcode, DO NOT USE THIS TWEAK AT ALL! Please do not turn off \"Show Dock In Stage Manager\" or your device will BOOTLOOP when rotating to landscape! With these two things in mind, you may experience general instability, or other major issues such as app data randomly disappearing. I'm honestly not too certain why you'd want to use this tweak anyways, it's not like your device is gonna be all that usable (due to apps scaling weirdly) when it's enabled."
+                )
+            }
+    
+            cache_data.mutableBytes.storeBytes(
+                of: enabled ? 3 : 1,
+                toByteOffset: value_off,
+                as: Int.self
+            )
+    
+            if enabled {
+                for (key, value) in values {
+                    cache_extra[key] = value
+                }
+            } else {
+                for key in values.keys {
                     cache_extra.removeObject(forKey: key)
                 }
             }
