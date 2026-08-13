@@ -37,7 +37,7 @@ struct ContentView: View {
                     } label: {
                         Text("PosterBoard")
                     }
-                    .disabled(true)
+                    .disabled(method == "cmg")
                 } header: {
                     Label("Tweaks", systemImage: "paintbrush")
                 } footer: {
