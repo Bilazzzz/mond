@@ -20,7 +20,10 @@
 </p>
 
 > [!WARNING]  
-> Some of the tweaks have the potential to brick your device! Use at your own risk.
+> Some of the tweaks have the potential to brick your device!<br>Use at your own risk.
+
+>[!NOTE]
+> No support regarding Apple Intelligence will be answered in GitHub issues anymore.<br>Ask in the [discord server](https://discord.gg/gw8PcRF3Jr).
 
 **Planned:**<br>
 &#45; HouseArrest file browser<br>
