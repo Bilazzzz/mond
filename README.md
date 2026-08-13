@@ -27,10 +27,12 @@
 
 **Planned:**<br>
 &#45; HouseArrest file browser<br>
-&#45; Pocket Poster
 
-<details>
-<summary><strong>Implemented:</strong></summary>
+**Implemented:**<br>
+&#45; Pocket Poster<br>
+&#45; MobileGestalt Editor<br>
+
+<details><summary>MobileGestalt Tweaks:</summary>
   
 **Device Artwork**<br>
 &#45; Subtype: Changes the reported device artwork/model.<br>
@@ -67,8 +69,8 @@
 &#45; Internal Storage: Enables internal storage features.<br>
 &#45; Internal Features: Enables internal Apple features.<br>
 &#45; Metal HUD in All Apps: Enables the Metal HUD across apps.<br>
-</details><sup>
-NOTE: Some tweaks may not appear on your device because they aren't supported.</sup>
+</details>
+<sup>NOTE: Some tweaks may not appear on your device because they aren't supported.</sup>
 
 **Known Issues:**<br>
 &#45; Tweaks may disappear on reboot<br>
