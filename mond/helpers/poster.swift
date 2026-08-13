@@ -30,20 +30,26 @@ enum pb {
     static let collections_ext = "com.apple.WallpaperKit.CollectionsPoster"
     static let photos_ext = "com.apple.PhotosUIPrivate.PhotosPosterProvider"
     static let ext_version = "61"
-    static let container_root = "/var/mobile/Containers/Data/Application"
+    static let container_roots = [
+        "/var/mobile/Containers/Data/Application",
+        "/var/mobile/Containers/Data/InternalDaemon",
+        "/var/mobile/Containers/Data/PluginKitPlugin",
+    ]
 
     static func find_pb_container() throws -> URL {
-        for child in list_containers(container_root) {
-            let child_url = URL(fileURLWithPath: child, isDirectory: true)
+        for root in container_roots {
+            for child in list_containers(root) {
+                let child_url = URL(fileURLWithPath: child, isDirectory: true)
 
-            let hidden = child_url.appendingPathComponent(".com.apple.mobile_container_manager.metadata.plist")
-            if let id = read_meta_key(at: hidden, key: "MCMMetadataIdentifier"), id == pb_bid {
-                return child_url
-            }
+                let hidden = child_url.appendingPathComponent(".com.apple.mobile_container_manager.metadata.plist")
+                if let id = read_meta_key(at: hidden, key: "MCMMetadataIdentifier"), id == pb_bid {
+                    return child_url
+                }
 
-            let plain = child_url.appendingPathComponent("com.apple.mobile_container_manager.metadata.plist")
-            if let id = read_meta_key(at: plain, key: "MCMMetadataIdentifier"), id == pb_bid {
-                return child_url
+                let plain = child_url.appendingPathComponent("com.apple.mobile_container_manager.metadata.plist")
+                if let id = read_meta_key(at: plain, key: "MCMMetadataIdentifier"), id == pb_bid {
+                    return child_url
+                }
             }
         }
 
@@ -134,35 +140,80 @@ enum pb {
     private static func find_descriptors(in root: URL) throws -> [String: [URL]] {
         var result: [String: [URL]] = [:]
 
-        if let container = try fm.contentsOfDirectory(at: root, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
-            .first(where: { $0.lastPathComponent.lowercased() == "container" }) {
+        let top = try fm.contentsOfDirectory(at: root, includingPropertiesForKeys: [.isDirectoryKey], options: .skipsHiddenFiles)
+
+        if let container = top.first(where: { $0.lastPathComponent.lowercased() == "container" }) {
             let ext_dir = poster_extensions_root(container: container)
-            
+
             if fm.fileExists(atPath: ext_dir.path) {
                 for ext in try fm.contentsOfDirectory(at: ext_dir, includingPropertiesForKeys: nil, options: .skipsHiddenFiles) {
                     let d = ext.appendingPathComponent("descriptors")
                     if fm.fileExists(atPath: d.path) {
-                        for child in try fm.contentsOfDirectory(at: d, includingPropertiesForKeys: nil, options: .skipsHiddenFiles) {
-                            guard child.lastPathComponent != "__MACOSX" else { continue }
-                            result[ext.lastPathComponent, default: []].append(child)
-                        }
+                        result[ext.lastPathComponent, default: []].append(contentsOf: descriptor_folders(in: d))
                     }
                 }
-                
+
                 return result
             }
         }
 
-        if let enumerator = fm.enumerator(at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
-            for case let dir as URL in enumerator {
-                guard (try? dir.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { continue }
-                let name = dir.lastPathComponent.lowercased()
-                guard name.contains("descriptor") else { continue }
-                result[name.hasPrefix("video") ? photos_ext : collections_ext, default: []].append(dir)
+        for dir in top {
+            switch dir.lastPathComponent.lowercased() {
+                case "video-descriptor", "video-descriptors":
+                    result[photos_ext, default: []].append(contentsOf: descriptor_folders(in: dir))
+                case "descriptor", "descriptors", "ordered-descriptor", "ordered-descriptors":
+                    result[collections_ext, default: []].append(contentsOf: descriptor_folders(in: dir))
+                default:
+                    continue
             }
         }
-        
+
+        if !result.isEmpty {
+            return result
+        }
+
+        if let enumerator = fm.enumerator(at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
+            for case let dir as URL in enumerator {
+                guard dir.lastPathComponent != "__MACOSX",
+                      (try? dir.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { continue }
+
+                if is_descriptor_container(dir) {
+                    let ext = dir.lastPathComponent.lowercased().hasPrefix("video") ? photos_ext : collections_ext
+                    result[ext, default: []].append(contentsOf: descriptor_folders(in: dir))
+                } else if is_descriptor(dir) {
+                    let ext = dir.lastPathComponent.lowercased().hasPrefix("video") ? photos_ext : collections_ext
+                    result[ext, default: []].append(dir)
+                }
+            }
+        }
+
         return result
+    }
+
+    private static func descriptor_folders(in dir: URL) -> [URL] {
+        guard let children = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil, options: .skipsHiddenFiles) else {
+            return []
+        }
+
+        return children.filter { $0.lastPathComponent != "__MACOSX" }
+    }
+
+    private static func is_descriptor_container(_ dir: URL) -> Bool {
+        switch dir.lastPathComponent.lowercased() {
+            case "descriptor", "descriptors", "ordered-descriptor", "ordered-descriptors",
+                 "video-descriptor", "video-descriptors":
+                return true
+            default:
+                return false
+        }
+    }
+
+    private static func is_descriptor(_ dir: URL) -> Bool {
+        guard let children = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil, options: .skipsHiddenFiles) else {
+            return false
+        }
+
+        return children.contains { $0.lastPathComponent == "com.apple.posterkit.provider.descriptor.identifier" }
     }
 
     private static func write_descriptor(at src: URL, container: URL, ext: String) throws {
