@@ -41,10 +41,11 @@ struct ContentView: View {
                 } header: {
                     Label("Tweaks", systemImage: "paintbrush")
                 } footer: {
-                    // if method == "cmg" {
-                    //     Text("Only MobileGestalt is available when method is set to cmg.")
-                    // }
-                    Text("PosterBoard is still in development and therefore disabled.")
+                    if method == "cmg" {
+                         Text("Only MobileGestalt is available when method is set to cmg.\nPosterBoard is still in development and may not work as expected.")
+                    } else {
+                        Text("PosterBoard is still in development and may not work as expected.")
+                    }
                 }
             }
             .navigationTitle("mond")
