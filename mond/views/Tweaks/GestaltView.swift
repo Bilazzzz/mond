@@ -45,8 +45,7 @@ struct GestaltView: View {
             case "air":
                 return 2736
             case "x":
-                // FIX: Use device-specific value for home-button devices
-                return homeButtonGesturesSubtype()
+                return 2436
             default:
                 return 0
         }
@@ -129,6 +128,16 @@ struct GestaltView: View {
                             Text("Subtype")
                             Spacer()
                         }
+                    }
+                    
+                    // Warning for home-button devices selecting iPhone X Gestures
+                    if hasHomeButton() && selected_st == "x" {
+                        PlainAlert(
+                            title: "rdar:45025538 Warning",
+                            icon: "exclamationmark.triangle.fill",
+                            text: "iPhone X Gestures on home-button devices may cause a red status bar (rdar:45025538). This is an iOS limitation. Use 'Revert Tweaks' if it happens.",
+                            color: Color.orange
+                        )
                     }
                     
                     Toggle("Custom Device Name", isOn: $enable_devicename)
@@ -275,35 +284,6 @@ struct GestaltView: View {
         }
     }
     
-    /// Returns the correct ArtworkDeviceSubType for home-button devices
-    /// to enable iPhone X gestures without causing rdar:45025538
-    private func homeButtonGesturesSubtype() -> Int {
-        let machine = machine_name()
-        
-        // iPhone SE 2/3 (1334x750) - use 1334 to avoid resolution mismatch
-        if machine == "iPhone12,8" || machine == "iPhone14,6" {
-            return 1334
-        }
-        
-        // iPhone 8/7/6s/SE (1334x750)
-        if machine == "iPhone10,1" || machine == "iPhone10,4" || // iPhone 8
-           machine == "iPhone9,1" || machine == "iPhone9,3" ||    // iPhone 7
-           machine == "iPhone8,1" ||                               // iPhone 6s
-           machine == "iPhone8,4" {                                // iPhone SE
-            return 1334
-        }
-        
-        // iPhone 8 Plus/7 Plus/6s Plus (1920x1080)
-        if machine == "iPhone10,2" || machine == "iPhone10,5" || // 8 Plus
-           machine == "iPhone9,2" || machine == "iPhone9,4" ||   // 7 Plus
-           machine == "iPhone8,2" {                               // 6s Plus
-            return 1920
-        }
-        
-        // Default fallback - use original value to avoid breaking
-        return og_st
-    }
-    
     private enum MGViewError: Error, LocalizedError {
         case missingArtworkSubtype
         case missingArtworkDeviceName
@@ -381,6 +361,23 @@ struct GestaltView: View {
     }
     
     private func mg_apply() {
+        // Warn before applying iPhone X Gestures on home-button devices
+        if hasHomeButton() && selected_st == "x" {
+            Alertinator.shared.alert(
+                title: "rdar:45025538 Warning",
+                body: "iPhone X Gestures on your device will change ArtworkDeviceSubType to 2436. This may cause a red status bar (rdar:45025538) because your screen resolution doesn't match. If this happens, open mond and press 'Revert Tweaks'. Do you want to continue?",
+                actionLabel: "Continue",
+                action: {
+                    self.mg_apply_internal()
+                }
+            )
+            return
+        }
+        
+        mg_apply_internal()
+    }
+    
+    private func mg_apply_internal() {
         do {
             let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
             if !product_type.isEmpty {
