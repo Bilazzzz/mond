@@ -1,4 +1,3 @@
-
 //
 //  GestaltView.swift
 //  mond
@@ -46,7 +45,8 @@ struct GestaltView: View {
             case "air":
                 return 2736
             case "x":
-                return 2436
+                // FIX: Use device-specific value for home-button devices
+                return homeButtonGesturesSubtype()
             default:
                 return 0
         }
@@ -55,7 +55,7 @@ struct GestaltView: View {
     private var st_to_sel: [Int: String] {
         [
             0: "no_dynamic_island",
-            2436: "14p",
+            2436: "x",
             2556: "14p",
             2796: "14pm",
             2976: "15pm",
@@ -144,7 +144,7 @@ struct GestaltView: View {
                 Section {
                     PlainToggle(text: "Dynamic Island", minSupportedVersion: 19.0, isOn: mg_key_binding(["YlEtTtHlNesRBMal1CqRaA"]))
                     PlainToggle(text: "Always On Display", minSupportedVersion: 18.0, isOn: mg_key_binding(["j8/Omm6s1lsmTDFsXjsBfA", "2OOJf1VhaM7NxfRok3HbWQ"]))
-                    PlainToggle(text: "AOD Vibrancy", minSupportedVersion: 18.0, isOn: mg_key_binding(["ykpu7qyhqFweVMKtxNylWA"]))
+                    PlainToggle(text: "AOD Vibrancy", minSupportedVersion: 18.0, isOn: mg_key_binding(["yhHcB0iH0d1XzPO/CFd3ow"]))
                     PlainToggle(text: "Charge Limit", minSupportedVersion: 17.0, isOn: mg_key_binding(["37NVydb//GP/GrhuTN+exg"]))
                     PlainToggle(text: "Boot Chime", isOn: mg_key_binding(["QHxt+hGLaBPbQJbXiUJX3w"]))
                     PlainToggle(text: "Liquid Glass LPM", minSupportedVersion: 19.0, isOn: mg_key_binding(["SAGvsp6O6kAQ4fEfDJpC4Q"]))
@@ -275,6 +275,35 @@ struct GestaltView: View {
         }
     }
     
+    /// Returns the correct ArtworkDeviceSubType for home-button devices
+    /// to enable iPhone X gestures without causing rdar:45025538
+    private func homeButtonGesturesSubtype() -> Int {
+        let machine = machine_name()
+        
+        // iPhone SE 2/3 (1334x750) - use 1334 to avoid resolution mismatch
+        if machine == "iPhone12,8" || machine == "iPhone14,6" {
+            return 1334
+        }
+        
+        // iPhone 8/7/6s/SE (1334x750)
+        if machine == "iPhone10,1" || machine == "iPhone10,4" || // iPhone 8
+           machine == "iPhone9,1" || machine == "iPhone9,3" ||    // iPhone 7
+           machine == "iPhone8,1" ||                               // iPhone 6s
+           machine == "iPhone8,4" {                                // iPhone SE
+            return 1334
+        }
+        
+        // iPhone 8 Plus/7 Plus/6s Plus (1920x1080)
+        if machine == "iPhone10,2" || machine == "iPhone10,5" || // 8 Plus
+           machine == "iPhone9,2" || machine == "iPhone9,4" ||   // 7 Plus
+           machine == "iPhone8,2" {                               // 6s Plus
+            return 1920
+        }
+        
+        // Default fallback - use original value to avoid breaking
+        return og_st
+    }
+    
     private enum MGViewError: Error, LocalizedError {
         case missingArtworkSubtype
         case missingArtworkDeviceName
@@ -301,14 +330,12 @@ struct GestaltView: View {
 
                 let loaded_dict = try NSMutableDictionary(contentsOf: mg_url_now, error: ())
 
-                // this'll cache gestalt and put it in a safe place
                 let mg_url_saved = URL(fileURLWithPath: AppPaths.backups).appendingPathComponent("SavedGestalt.plist")
 
                 if !FileManager.default.fileExists(atPath: mg_url_saved.path) {
                     try FileManager.default.copyItem(at: mg_url_now, to: mg_url_saved)
                 }
 
-                // get original gestalt values
                 let mg_saved_dict = try NSMutableDictionary(contentsOf: mg_url_saved, error: ())
                 let og_cache_extra = mg_saved_dict["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
                 let og_artwork = og_cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
@@ -388,10 +415,9 @@ struct GestaltView: View {
             let backup_data = try Data(contentsOf: backup_url)
             try mg_write(backup_data)
 
-            print("(mg) successfully reverted mobilegestalt!)")
+            print("(mg) successfully reverted mobilegestalt!")
             Alertinator.shared.alert(title: "Successfully reverted Gestalt tweaks!", body: "Reboot your device for changes to take effect.")
         } catch {
-            // The direct file write path now surfaces the underlying error through the catch.
             print("(mg) failed to revert mobilegestalt: \(error)")
             Alertinator.shared.alert(title: "Failed to revert MobileGestalt!", body: "Check logs for error information.")
         }
@@ -425,7 +451,6 @@ struct GestaltView: View {
             guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
             
             for key in keys {
-                // if it exists inside of the plist, then update it. if not then pull the value completely.
                 if enabled {
                     cache_extra[key] = on_val
                 } else {
@@ -438,11 +463,11 @@ struct GestaltView: View {
     private func mg_trollpad_binding() -> Binding<Bool> {
         let value_off = cache_data_offset("mtrAoWJ3gsq+I90ZnQ0vQw")
         let values: [String: Int] = [
-            "mG0AnH/Vy1veoqoLRAIgTA": 1, // MedusaFloatingLiveAppCapability
-            "UCG5MkVahJxG1YULbbd5Bg": 1, // MedusaOverlayAppCapability
-            "ZYqko/XM5zD3XBfN5RmaXA": 1, // MedusaPinnedAppCapability
-            "nVh/gwNpy7Jv1NOk00CMrw": 1, // MedusaPIPCapability
-            "uKc7FPnEO++lVhHWHFlGbQ": 1, // ipad
+            "mG0AnH/Vy1veoqoLRAIgTA": 1,
+            "UCG5MkVahJxG1YULbbd5Bg": 1,
+            "ZYqko/XM5zD3XBfN5RmaXA": 1,
+            "nVh/gwNpy7Jv1NOk00CMrw": 1,
+            "uKc7FPnEO++lVhHWHFlGbQ": 1,
         ]
     
         return Binding(get: {
@@ -462,7 +487,7 @@ struct GestaltView: View {
             if enabled {
                 Alertinator.shared.alert(
                     title: "Warning!",
-                    body: "This is a very dangerous tweak to use! If you use an alphanumeric passcode, DO NOT USE THIS TWEAK AT ALL! Please do not turn off \"Show Dock In Stage Manager\" or your device will BOOTLOOP when rotating to landscape! With these two things in mind, you may experience general instability, or other major issues such as app data randomly disappearing. I'm honestly not too certain why you'd want to use this tweak anyways, it's not like your device is gonna be all that usable (due to apps scaling weirdly) when it's enabled."
+                    body: "This is a very dangerous tweak to use! If you use an alphanumeric passcode, DO NOT USE THIS TWEAK AT ALL! Please do not turn off \"Show Dock In Stage Manager\" or your device will BOOTLOOP when rotating to landscape! With these two things in mind, you may experience general instability, or other major issues such as app data randomly disappearing."
                 )
             }
     
@@ -496,7 +521,7 @@ struct GestaltView: View {
                 guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
                 
                 if enabled {
-                    Alertinator.shared.alert(title: "Warning!", body: "Please do not use this feature to bypass region restrictions that would equate to breaking regional laws (e.g. disabling the camera shutter sound). We will NOT be held responsible for enabling any illegal activites!")
+                    Alertinator.shared.alert(title: "Warning!", body: "Please do not use this feature to bypass region restrictions that would equate to breaking regional laws.")
                     cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] = "US"
                     cache_extra["zHeENZu+wbg7PUprwNwBWg"] = "LL/A"
                 } else {
@@ -525,10 +550,9 @@ struct GestaltView: View {
                 
                 if enabled {
                     cache_extra[key] = 1
-    
                     Alertinator.shared.alert(
                         title: "Apple Intelligence Spoof",
-                        body: "How to use this tweak:\n1. Spoof to the model next to the first one supported by Apple Intelligence.\n2. Spoof back to your model.\n3. Spoof to your final model and you should see the Apple Intelligence icon in Settings.\n4. Connect iPhone to power and leave the Settings > Storage tab open for ~1 hour.\n\nNOTE: Do not spoof back."
+                        body: "How to use this tweak:\n1. Spoof to the model next to the first one supported by Apple Intelligence.\n2. Spoof back to your model.\n3. Spoof to your final model.\n4. Connect iPhone to power.\n\nNOTE: Do not spoof back."
                     )
                 } else {
                     cache_extra.removeObject(forKey: key)
