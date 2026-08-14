@@ -38,13 +38,20 @@ struct ContentView: View {
                         Text("PosterBoard")
                     }
                     .disabled(method == "cmg")
+                    
+                    NavigationLink {
+                        SantanderView()
+                    } label: {
+                        Text("HouseArrest")
+                    }
+                    .disabled(true)
                 } header: {
                     Label("Tweaks", systemImage: "paintbrush")
                 } footer: {
                     if method == "cmg" {
                          Text("Only MobileGestalt is available when method is set to cmg.\nPosterBoard is still in development and may not work as expected.")
                     } else {
-                        Text("PosterBoard is still in development and may not work as expected.")
+                        Text("HouseArrest is still in development and may not work as expected.")
                     }
                 }
             }
