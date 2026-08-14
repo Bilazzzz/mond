@@ -139,44 +139,69 @@ struct GestaltView: View {
                     Label("Device Artwork", systemImage: "paintbrush.pointed")
                 }
                 
-                // basic tweak toggles
+                // Software-Oriented Features
                 Section {
                     PlainToggle(text: "Dynamic Island", minSupportedVersion: 19.0, isOn: mg_key_binding(["YlEtTtHlNesRBMal1CqRaA"]))
                     PlainToggle(text: "Always On Display", minSupportedVersion: 18.0, isOn: mg_key_binding(["j8/Omm6s1lsmTDFsXjsBfA", "2OOJf1VhaM7NxfRok3HbWQ"]))
                     PlainToggle(text: "AOD Vibrancy", minSupportedVersion: 18.0, isOn: mg_key_binding(["yhHcB0iH0d1XzPO/CFd3ow"]))
+                    
+                    if Diagnostics.checkTweakCompatibility()["Charge Limit"] == .requiresSpoof {
+                        PlainAlert(
+                            title: "Charge Limit Warning",
+                            icon: "exclamationmark.triangle.fill",
+                            text: "Charge Limit requires device spoofing to iPhone 15 Pro or newer on your device.",
+                            color: Color.orange
+                        )
+                    }
                     PlainToggle(text: "Charge Limit", minSupportedVersion: 17.0, isOn: mg_key_binding(["37NVydb//GP/GrhuTN+exg"]))
+                    
                     PlainToggle(text: "Boot Chime", isOn: mg_key_binding(["QHxt+hGLaBPbQJbXiUJX3w"]))
                     PlainToggle(text: "Liquid Glass LPM", minSupportedVersion: 19.0, isOn: mg_key_binding(["SAGvsp6O6kAQ4fEfDJpC4Q"]))
                 } header: {
                     Label("Software-Oriented Features", systemImage: "gearshape")
                 }
                 
+                // Hardware-Oriented Features
                 Section {
                     PlainToggle(text: "Camera Control", minSupportedVersion: 18.0, isOn: mg_key_binding(["CwvKxM2cEogD3p+HYgaW0Q", "oOV1jhJbdV3AddkcCg0AEA"]))
+                    
+                    if doubleSystemVersion() >= 18.0 {
+                        PlainToggle(
+                            text: "Visual Intelligence",
+                            infoType: .info,
+                            infoMessage: "Enables Visual Intelligence (Camera Control long-press). Requires iOS 18.0+ and device spoofing to iPhone 17 Pro on older devices.",
+                            minSupportedVersion: 18.0,
+                            isOn: mg_key_binding(["CwvKxM2cEogD3p+HYgaW0Q", "oOV1jhJbdV3AddkcCg0AEA", "VqhHQr2+VnB0K7H4R0xQ0g"])
+                        )
+                    }
+                    
                     PlainToggle(text: "Action Button", minSupportedVersion: 17.0, isOn: mg_key_binding(["cT44WE1EohiwRzhsZ8xEsw"]))
                     PlainToggle(text: "Crash Detection", isOn: mg_key_binding(["HCzWusHQwZDea6nNhaKndw"]))
+                    
                     if hasHomeButton() {
                         PlainToggle(text: "Enable Tap to Wake", isOn: mg_key_binding(["yZf3GTRMGTuwSV/lD7Cagw"]))
                     }
+                    
                     PlainToggle(text: "Pulse Width Modulation", minSupportedVersion: 19.0, isOn: mg_key_binding(["6IejgN+1Fmu5/QrZFOIeNw"]))
                 } header: {
                     Label("Hardware-Oriented Features", systemImage: "iphone")
                 }
                 
+                // Eligibility
                 Section {
                     PlainToggle(text: "Security Research Device UI", minSupportedVersion: 26.0, isOn: mg_key_binding(["XYlJKKkj2hztRP1NWWnhlw"]))
                     
                     PlainToggle(
                         text: "Disable Region Restrictions",
                         infoType: .info,
-                        infoMessage: "This tweak may be broken or have no effect on some iOS versions or devices.",
+                        infoMessage: "This tweak may be broken or have no effect on some iOS versions or devices. A respring or reboot may be required.",
                         isOn: mg_region_restrict_binding()
                     )
                     
                     PlainToggle(
                         text: "Apple Intelligence",
                         infoType: .info,
-                        infoMessage: "How to use this tweak:\n1. Spoof to the model next to the first one supported by Apple Intelligence.\n2. Spoof back to your model.\n3. Spoof to your final model and you should see the Apple Intelligence icon in Settings.\n4. Connect iPhone to power and leave the Settings > Storage tab open for ~1 hour.\n\nNOTE: Do not spoof back.",
+                        infoMessage: "How to use this tweak:\n1. Spoof to the model next to the first one supported by Apple Intelligence.\n2. Spoof back to your model.\n3. Spoof to your final model and you should see the Apple Intelligence icon in Settings.\n4. Connect iPhone to power and leave the Settings > Storage tab open for ~1 hour.\n\nNOTE: This may break Siri on some devices.",
                         minSupportedVersion: 18.1,
                         isOn: mg_apple_intelligence_binding()
                     )
@@ -224,6 +249,7 @@ struct GestaltView: View {
                     Label("Eligibility", systemImage: "checklist")
                 }
                 
+                // iPadOS Features
                 Section {
                     let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary
                     
@@ -233,10 +259,11 @@ struct GestaltView: View {
                     if UIDevice.current.userInterfaceIdiom == .pad {
                         PlainToggle(text: "Stage Manager", isOn: mg_key_binding(["qeaj75wk3HF4DwQ8qbIi7g"]))
                     }
+                    
                     PlainToggle(
                         text: "iPadOS UI",
                         infoType: .warning,
-                        infoMessage: "This is a very dangerous tweak to use! If you use an alphanumeric passcode, DO NOT USE THIS TWEAK AT ALL! Please do not turn off \"Show Dock In Stage Manager\" or your device will BOOTLOOP when rotating to landscape! Some users have also reported that enabling the iPadOS UI and then tapping Stage Manager can cause the device to enter Recovery Mode, even when the UI itself appears unchanged. The Settings search bar may move to the top before this happens. With these three things in mind, you may experience general instability, or other major issues such as app data randomly disappearing. But I guess some funny multitasking features that still make the device relatively unusable are cool? Whatever dude, I'm not here to tell you how to use your own device.",
+                        infoMessage: "This is a very dangerous tweak to use! If you use an alphanumeric passcode, DO NOT USE THIS TWEAK AT ALL! Please do not turn off \"Show Dock In Stage Manager\" or your device will BOOTLOOP when rotating to landscape! Some users have also reported that enabling the iPadOS UI and then tapping Stage Manager can cause the device to enter Recovery Mode, even when the UI itself appears unchanged. The Settings search bar may move to the top before this happens. With these three things in mind, you may experience general instability, or other major issues such as app data randomly disappearing.",
                         isOn: mg_trollpad_binding()
                     )
                     .disabled(cache_extra?["+3Uf0Pm5F8Xy7Onyvko0vA"] as? String != "iPhone")
@@ -244,6 +271,7 @@ struct GestaltView: View {
                     Label("iPadOS Features", systemImage: "ipad")
                 }
                 
+                // Internal
                 Section {
                     PlainToggle(text: "Internal Storage", isOn: mg_key_binding(["LBJfwOEzExRxzlAnSuI7eg"]))
                     PlainToggle(text: "Internal Features", isOn: mg_internal_binding())
@@ -300,14 +328,12 @@ struct GestaltView: View {
 
                 let loaded_dict = try NSMutableDictionary(contentsOf: mg_url_now, error: ())
 
-                // this'll cache gestalt and put it in a safe place
                 let mg_url_saved = URL(fileURLWithPath: AppPaths.backups).appendingPathComponent("SavedGestalt.plist")
 
                 if !FileManager.default.fileExists(atPath: mg_url_saved.path) {
                     try FileManager.default.copyItem(at: mg_url_now, to: mg_url_saved)
                 }
 
-                // get original gestalt values
                 let mg_saved_dict = try NSMutableDictionary(contentsOf: mg_url_saved, error: ())
                 let og_cache_extra = mg_saved_dict["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
                 let og_artwork = og_cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
@@ -353,14 +379,37 @@ struct GestaltView: View {
     }
     
     private func mg_apply() {
-        // Apply rdar fix for home-button devices with iPhone X Gestures
-        if hasHomeButton() && selected_st == "x" {
+        let compatibility = Diagnostics.checkTweakCompatibility()
+        
+        // Проверяем Charge Limit
+        if let chargeLimitEnabled = mg_dict_now["CacheExtra"]?["37NVydb//GP/GrhuTN+exg"] as? Int,
+           chargeLimitEnabled == 1,
+           compatibility["Charge Limit"] == .requiresSpoof,
+           product_type == machine_name() {
             Alertinator.shared.alert(
-                title: "iPhone X Gestures + RDAR Fix",
-                body: "This will enable iPhone X Gestures AND patch IOMobileGraphicsFamily.plist to prevent rdar:45025538 (red status bar). A REBOOT is required after applying. Do you want to continue?",
+                title: "Charge Limit Warning",
+                body: "Charge Limit may not work on your device without spoofing to iPhone 15 Pro or newer. Do you want to continue anyway?",
                 actionLabel: "Continue",
+                cancelLabel: "Cancel",
+                cancelAction: { return },
                 action: {
-                    self.mg_apply_with_rdar_fix()
+                    self.mg_apply_internal()
+                }
+            )
+            return
+        }
+        
+        // Проверяем Apple Intelligence + Siri
+        if let aiEnabled = mg_dict_now["CacheExtra"]?["A62OafQ85EJAiiqKn4agtg"] as? Int,
+           aiEnabled == 1 {
+            Alertinator.shared.alert(
+                title: "Apple Intelligence Warning",
+                body: "Enabling Apple Intelligence spoof may break Siri functionality on some devices. This is a known limitation. Do you want to continue?",
+                actionLabel: "Continue",
+                cancelLabel: "Cancel",
+                cancelAction: { return },
+                action: {
+                    self.mg_apply_internal()
                 }
             )
             return
@@ -369,43 +418,59 @@ struct GestaltView: View {
         mg_apply_internal()
     }
     
-    private func mg_apply_with_rdar_fix() {
-        mg_apply_internal()
-        
-        do {
-            try RDFix.patch(subtype: selected_st_value)
-            print("(mg) rdar fix applied successfully!")
-        } catch {
-            print("(mg) rdar fix failed: \(error.localizedDescription)")
-        }
-    }
-    
     private func mg_apply_internal() {
         do {
             let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
+            
             if !product_type.isEmpty {
                 cache_extra["h9jDsbgj7xIVeIQ8S3/X3Q"] = product_type
+                print("(mg) set device type to: \(product_type)")
             }
             
             let artwork_dict = cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
             artwork_dict["ArtworkDeviceSubType"] = selected_st_value
+            print("(mg) set ArtworkDeviceSubType to: \(selected_st_value)")
+            
             if enable_devicename {
                 artwork_dict["ArtworkDeviceProductDescription"] = mg_devicename
+                print("(mg) set device name to: \(mg_devicename)")
             }
             
             let data = try PropertyListSerialization.data(fromPropertyList: mg_dict_now, format: .xml, options: 0)
-
+            
+            let originalSize = (try? FileManager.default.attributesOfItem(atPath: TweakPaths.gestalt))[.size] as? UInt64 ?? 0
+            let newSize = UInt64(data.count)
+            
+            if newSize < originalSize / 2 {
+                print("(mg) WARNING: New file size (\(newSize)) is much smaller than original (\(originalSize))")
+            }
+            
             try mg_write(data)
+            
+            print("(mg) ✓ Successfully overwrote mobilegestalt (\(newSize) bytes)")
+            
+            let writtenSize = (try? FileManager.default.attributesOfItem(atPath: TweakPaths.gestalt))[.size] as? UInt64 ?? 0
+            if writtenSize != newSize {
+                print("(mg) ERROR: File size mismatch after write (expected \(newSize), got \(writtenSize))")
+            }
+            
             mg_dict_now = NSMutableDictionary()
             enable_devicename = false
-
-            print("(mg) successfully overwrote mobilegestalt!")
-            Alertinator.shared.alert(title: "Successfully applied Gestalt tweaks!", body: "Respring your device for changes to take effect. Note that some tweaks may require a reboot for them to apply properly.", actionLabel: "Respring", action: {
-                state.respring()
-            })
+            
+            Alertinator.shared.alert(
+                title: "Successfully applied Gestalt tweaks!",
+                body: "Respring your device for changes to take effect. Note that some tweaks may require a reboot.",
+                actionLabel: "Respring",
+                action: {
+                    state.respring()
+                }
+            )
         } catch {
-            print("(mg) failed to apply mobilegestalt: \(error)")
-            Alertinator.shared.alert(title: "Failed to apply MobileGestalt!", body: "Restart the app and try again. Check logs for more detailed information.")
+            print("(mg) ✗ Failed to apply mobilegestalt: \(error.localizedDescription)")
+            Alertinator.shared.alert(
+                title: "Failed to apply MobileGestalt!",
+                body: "Error: \(error.localizedDescription)\n\nCheck logs for more details."
+            )
         }
     }
     
@@ -414,9 +479,6 @@ struct GestaltView: View {
             let backup_url = URL(fileURLWithPath: AppPaths.backups).appendingPathComponent("SavedGestalt.plist")
             let backup_data = try Data(contentsOf: backup_url)
             try mg_write(backup_data)
-
-            // Also restore IOMobileGraphicsFamily.plist if it was patched
-            try? RDFix.restore()
 
             print("(mg) successfully reverted mobilegestalt!")
             Alertinator.shared.alert(title: "Successfully reverted Gestalt tweaks!", body: "Reboot your device for changes to take effect.")
@@ -454,7 +516,6 @@ struct GestaltView: View {
             guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
             
             for key in keys {
-                // if it exists inside of the plist, then update it. if not then pull the value completely.
                 if enabled {
                     cache_extra[key] = on_val
                 } else {
@@ -467,11 +528,11 @@ struct GestaltView: View {
     private func mg_trollpad_binding() -> Binding<Bool> {
         let value_off = cache_data_offset("mtrAoWJ3gsq+I90ZnQ0vQw")
         let values: [String: Int] = [
-            "mG0AnH/Vy1veoqoLRAIgTA": 1, // MedusaFloatingLiveAppCapability
-            "UCG5MkVahJxG1YULbbd5Bg": 1, // MedusaOverlayAppCapability
-            "ZYqko/XM5zD3XBfN5RmaXA": 1, // MedusaPinnedAppCapability
-            "nVh/gwNpy7Jv1NOk00CMrw": 1, // MedusaPIPCapability
-            "uKc7FPnEO++lVhHWHFlGbQ": 1, // ipad
+            "mG0AnH/Vy1veoqoLRAIgTA": 1,
+            "UCG5MkVahJxG1YULbbd5Bg": 1,
+            "ZYqko/XM5zD3XBfN5RmaXA": 1,
+            "nVh/gwNpy7Jv1NOk00CMrw": 1,
+            "uKc7FPnEO++lVhHWHFlGbQ": 1,
         ]
     
         return Binding(get: {
@@ -491,7 +552,7 @@ struct GestaltView: View {
             if enabled {
                 Alertinator.shared.alert(
                     title: "Warning!",
-                    body: "This is a very dangerous tweak to use! If you use an alphanumeric passcode, DO NOT USE THIS TWEAK AT ALL! Please do not turn off \"Show Dock In Stage Manager\" or your device will BOOTLOOP when rotating to landscape! With these two things in mind, you may experience general instability, or other major issues such as app data randomly disappearing. I'm honestly not too certain why you'd want to use this tweak anyways, it's not like your device is gonna be all that usable (due to apps scaling weirdly) when it's enabled."
+                    body: "This is a very dangerous tweak to use! If you use an alphanumeric passcode, DO NOT USE THIS TWEAK AT ALL! Please do not turn off \"Show Dock In Stage Manager\" or your device will BOOTLOOP when rotating to landscape! With these two things in mind, you may experience general instability, or other major issues such as app data randomly disappearing."
                 )
             }
     
@@ -518,19 +579,31 @@ struct GestaltView: View {
             get: {
                 guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return false }
                 
-                return cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] as? String == "US" &&
-                    cache_extra["zHeENZu+wbg7PUprwNwBWg"] as? String == "LL/A"
+                let region = cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] as? String ?? ""
+                let model = cache_extra["zHeENZu+wbg7PUprwNwBWg"] as? String ?? ""
+                
+                return region == "US" && model == "LL/A"
             },
             set: { enabled in
                 guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
                 
                 if enabled {
-                    Alertinator.shared.alert(title: "Warning!", body: "Please do not use this feature to bypass region restrictions that would equate to breaking regional laws (e.g. disabling the camera shutter sound). We will NOT be held responsible for enabling any illegal activites!")
-                    cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] = "US"
-                    cache_extra["zHeENZu+wbg7PUprwNwBWg"] = "LL/A"
+                    Alertinator.shared.alert(
+                        title: "Region Restrictions Warning",
+                        body: "This will set region to US and model to LL/A. Some devices may require a respring or reboot for changes to take effect. Do not use this to bypass regional laws.",
+                        actionLabel: "Continue",
+                        cancelLabel: "Cancel",
+                        cancelAction: { return },
+                        action: {
+                            cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] = "US"
+                            cache_extra["zHeENZu+wbg7PUprwNwBWg"] = "LL/A"
+                            cache_extra["z/aOP8lqlO4y0Y3nXV8jQ"] = "LL/A"
+                        }
+                    )
                 } else {
                     cache_extra.removeObject(forKey: "h63QSdBCiT/z0WU6rdQv6Q")
                     cache_extra.removeObject(forKey: "zHeENZu+wbg7PUprwNwBWg")
+                    cache_extra.removeObject(forKey: "z/aOP8lqlO4y0Y3nXV8jQ")
                 }
             }
         )
@@ -557,7 +630,7 @@ struct GestaltView: View {
     
                     Alertinator.shared.alert(
                         title: "Apple Intelligence Spoof",
-                        body: "How to use this tweak:\n1. Spoof to the model next to the first one supported by Apple Intelligence.\n2. Spoof back to your model.\n3. Spoof to your final model and you should see the Apple Intelligence icon in Settings.\n4. Connect iPhone to power and leave the Settings > Storage tab open for ~1 hour.\n\nNOTE: Do not spoof back."
+                        body: "How to use this tweak:\n1. Spoof to the model next to the first one supported by Apple Intelligence.\n2. Spoof back to your model.\n3. Spoof to your final model and you should see the Apple Intelligence icon in Settings.\n4. Connect iPhone to power and leave the Settings > Storage tab open for ~1 hour.\n\nNOTE: Do not spoof back. This may break Siri on some devices."
                     )
                 } else {
                     cache_extra.removeObject(forKey: key)
