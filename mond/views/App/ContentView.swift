@@ -49,7 +49,7 @@ struct ContentView: View {
                     Label("Tweaks", systemImage: "paintbrush")
                 } footer: {
                     if method == "cmg" {
-                         Text("Only MobileGestalt is available when method is set to cmg.\nPosterBoard is still in development and may not work as expected.")
+                         Text("Only MobileGestalt is available when method is set to cmg.\nHouseArrest is still in development and may not work as expected.")
                     } else {
                         Text("HouseArrest is still in development and may not work as expected.")
                     }
