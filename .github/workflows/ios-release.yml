@@ -31,7 +31,7 @@ jobs:
           set -euo pipefail
           xcodebuild \
             -project mond.xcodeproj \
-            -scheme mond \
+            -target mond \
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \

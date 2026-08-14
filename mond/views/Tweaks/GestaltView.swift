@@ -1,3 +1,4 @@
+
 //
 //  GestaltView.swift
 //  mond
@@ -33,7 +34,7 @@ struct GestaltView: View {
             case "no_dynamic_island":
                 return 0
             case "14p":
-                return 2436
+                return 2556
             case "14pm":
                 return 2796
             case "15pm":
@@ -55,6 +56,7 @@ struct GestaltView: View {
         [
             0: "no_dynamic_island",
             2436: "14p",
+            2556: "14p",
             2796: "14pm",
             2976: "15pm",
             2622: "16p",
@@ -559,11 +561,7 @@ struct GestaltView: View {
     private func is_device_good() -> Bool {
         let supported: [String] = ["iPhone15,2", "iPhone15,3", "iPhone15,4", "iPhone15,5", "iPhone16,1", "iPhone16,2", "iPhone17,3", "iPhone17,4", "iPhone17,1", "iPhone17,2", "iPhone18,3", "iPhone18,1", "iPhone18,2", "iPhone17,5"]
         
-        if supported.contains(machine_name()) && doubleSystemVersion() < 19.0 {
-            return true
-        }
-        
-        return false
+        return supported.contains(machine_name())
     }
     
     private func machine_name() -> String {
