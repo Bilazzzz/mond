@@ -130,16 +130,6 @@ struct GestaltView: View {
                         }
                     }
                     
-                    // Warning for home-button devices selecting iPhone X Gestures
-                    if hasHomeButton() && selected_st == "x" {
-                        PlainAlert(
-                            title: "rdar:45025538 Warning",
-                            icon: "exclamationmark.triangle.fill",
-                            text: "iPhone X Gestures on home-button devices may cause a red status bar (rdar:45025538). This is an iOS limitation. Use 'Revert Tweaks' if it happens.",
-                            color: Color.orange
-                        )
-                    }
-                    
                     Toggle("Custom Device Name", isOn: $enable_devicename)
                     
                     if enable_devicename {
@@ -310,12 +300,14 @@ struct GestaltView: View {
 
                 let loaded_dict = try NSMutableDictionary(contentsOf: mg_url_now, error: ())
 
+                // this'll cache gestalt and put it in a safe place
                 let mg_url_saved = URL(fileURLWithPath: AppPaths.backups).appendingPathComponent("SavedGestalt.plist")
 
                 if !FileManager.default.fileExists(atPath: mg_url_saved.path) {
                     try FileManager.default.copyItem(at: mg_url_now, to: mg_url_saved)
                 }
 
+                // get original gestalt values
                 let mg_saved_dict = try NSMutableDictionary(contentsOf: mg_url_saved, error: ())
                 let og_cache_extra = mg_saved_dict["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
                 let og_artwork = og_cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
@@ -361,20 +353,31 @@ struct GestaltView: View {
     }
     
     private func mg_apply() {
-        // Warn before applying iPhone X Gestures on home-button devices
+        // Apply rdar fix for home-button devices with iPhone X Gestures
         if hasHomeButton() && selected_st == "x" {
             Alertinator.shared.alert(
-                title: "rdar:45025538 Warning",
-                body: "iPhone X Gestures on your device will change ArtworkDeviceSubType to 2436. This may cause a red status bar (rdar:45025538) because your screen resolution doesn't match. If this happens, open mond and press 'Revert Tweaks'. Do you want to continue?",
+                title: "iPhone X Gestures + RDAR Fix",
+                body: "This will enable iPhone X Gestures AND patch IOMobileGraphicsFamily.plist to prevent rdar:45025538 (red status bar). A REBOOT is required after applying. Do you want to continue?",
                 actionLabel: "Continue",
                 action: {
-                    self.mg_apply_internal()
+                    self.mg_apply_with_rdar_fix()
                 }
             )
             return
         }
         
         mg_apply_internal()
+    }
+    
+    private func mg_apply_with_rdar_fix() {
+        mg_apply_internal()
+        
+        do {
+            try RDFix.patch(subtype: selected_st_value)
+            print("(mg) rdar fix applied successfully!")
+        } catch {
+            print("(mg) rdar fix failed: \(error.localizedDescription)")
+        }
     }
     
     private func mg_apply_internal() {
@@ -412,6 +415,9 @@ struct GestaltView: View {
             let backup_data = try Data(contentsOf: backup_url)
             try mg_write(backup_data)
 
+            // Also restore IOMobileGraphicsFamily.plist if it was patched
+            try? RDFix.restore()
+
             print("(mg) successfully reverted mobilegestalt!")
             Alertinator.shared.alert(title: "Successfully reverted Gestalt tweaks!", body: "Reboot your device for changes to take effect.")
         } catch {
@@ -448,6 +454,7 @@ struct GestaltView: View {
             guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
             
             for key in keys {
+                // if it exists inside of the plist, then update it. if not then pull the value completely.
                 if enabled {
                     cache_extra[key] = on_val
                 } else {
@@ -460,11 +467,11 @@ struct GestaltView: View {
     private func mg_trollpad_binding() -> Binding<Bool> {
         let value_off = cache_data_offset("mtrAoWJ3gsq+I90ZnQ0vQw")
         let values: [String: Int] = [
-            "mG0AnH/Vy1veoqoLRAIgTA": 1,
-            "UCG5MkVahJxG1YULbbd5Bg": 1,
-            "ZYqko/XM5zD3XBfN5RmaXA": 1,
-            "nVh/gwNpy7Jv1NOk00CMrw": 1,
-            "uKc7FPnEO++lVhHWHFlGbQ": 1,
+            "mG0AnH/Vy1veoqoLRAIgTA": 1, // MedusaFloatingLiveAppCapability
+            "UCG5MkVahJxG1YULbbd5Bg": 1, // MedusaOverlayAppCapability
+            "ZYqko/XM5zD3XBfN5RmaXA": 1, // MedusaPinnedAppCapability
+            "nVh/gwNpy7Jv1NOk00CMrw": 1, // MedusaPIPCapability
+            "uKc7FPnEO++lVhHWHFlGbQ": 1, // ipad
         ]
     
         return Binding(get: {
@@ -484,7 +491,7 @@ struct GestaltView: View {
             if enabled {
                 Alertinator.shared.alert(
                     title: "Warning!",
-                    body: "This is a very dangerous tweak to use! If you use an alphanumeric passcode, DO NOT USE THIS TWEAK AT ALL! Please do not turn off \"Show Dock In Stage Manager\" or your device will BOOTLOOP when rotating to landscape! With these two things in mind, you may experience general instability, or other major issues such as app data randomly disappearing."
+                    body: "This is a very dangerous tweak to use! If you use an alphanumeric passcode, DO NOT USE THIS TWEAK AT ALL! Please do not turn off \"Show Dock In Stage Manager\" or your device will BOOTLOOP when rotating to landscape! With these two things in mind, you may experience general instability, or other major issues such as app data randomly disappearing. I'm honestly not too certain why you'd want to use this tweak anyways, it's not like your device is gonna be all that usable (due to apps scaling weirdly) when it's enabled."
                 )
             }
     
@@ -518,7 +525,7 @@ struct GestaltView: View {
                 guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
                 
                 if enabled {
-                    Alertinator.shared.alert(title: "Warning!", body: "Please do not use this feature to bypass region restrictions that would equate to breaking regional laws.")
+                    Alertinator.shared.alert(title: "Warning!", body: "Please do not use this feature to bypass region restrictions that would equate to breaking regional laws (e.g. disabling the camera shutter sound). We will NOT be held responsible for enabling any illegal activites!")
                     cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] = "US"
                     cache_extra["zHeENZu+wbg7PUprwNwBWg"] = "LL/A"
                 } else {
@@ -547,9 +554,10 @@ struct GestaltView: View {
                 
                 if enabled {
                     cache_extra[key] = 1
+    
                     Alertinator.shared.alert(
                         title: "Apple Intelligence Spoof",
-                        body: "How to use this tweak:\n1. Spoof to the model next to the first one supported by Apple Intelligence.\n2. Spoof back to your model.\n3. Spoof to your final model.\n4. Connect iPhone to power.\n\nNOTE: Do not spoof back."
+                        body: "How to use this tweak:\n1. Spoof to the model next to the first one supported by Apple Intelligence.\n2. Spoof back to your model.\n3. Spoof to your final model and you should see the Apple Intelligence icon in Settings.\n4. Connect iPhone to power and leave the Settings > Storage tab open for ~1 hour.\n\nNOTE: Do not spoof back."
                     )
                 } else {
                     cache_extra.removeObject(forKey: key)
