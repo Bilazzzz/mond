@@ -10,15 +10,27 @@ import Darwin
 import MachO
 import UIKit
 
-var _cache_data_offsets: [String: Int] = [:]
+// FIX: thread-safe cache
+private let _cache_lock = NSLock()
+private var _cache_data_offsets: [String: Int] = [:]
+private var _mg_dlopen_done = false
 
 func cache_data_offset(_ key: String) -> Int {
+    _cache_lock.lock()
     if let cached = _cache_data_offsets[key] {
+        _cache_lock.unlock()
         return cached
     }
+    _cache_lock.unlock()
 
     let lib_mg = "/usr/lib/libMobileGestalt.dylib"
-    dlopen(lib_mg, RTLD_GLOBAL)
+
+    _cache_lock.lock()
+    if !_mg_dlopen_done {
+        dlopen(lib_mg, RTLD_GLOBAL)
+        _mg_dlopen_done = true
+    }
+    _cache_lock.unlock()
 
     var header: UnsafePointer<mach_header_64>?
     for i in 0..<_dyld_image_count() {
@@ -33,10 +45,22 @@ func cache_data_offset(_ key: String) -> Int {
     guard let cstring = getsectiondata(header, "__TEXT", "__cstring", &text_size) else { return 0 }
     let cstr = cstring.withMemoryRebound(to: CChar.self, capacity: Int(text_size)) { $0 }
 
-    var key_ptr = cstr
-    while Int(key_ptr - cstr) < Int(text_size) {
-        if String(cString: key_ptr) == key { break }
-        key_ptr += strlen(key_ptr) + 1
+    // FIX: check that key is actually found
+    var key_ptr: UnsafePointer<CChar>? = nil
+    var cursor = cstr
+    while Int(cursor - cstr) < Int(text_size) {
+        if String(cString: cursor) == key {
+            key_ptr = cursor
+            break
+        }
+        cursor += strlen(cursor) + 1
+    }
+
+    guard let key_ptr else {
+        _cache_lock.lock()
+        _cache_data_offsets[key] = 0
+        _cache_lock.unlock()
+        return 0
     }
 
     var const_size: UInt = 0
@@ -49,20 +73,23 @@ func cache_data_offset(_ key: String) -> Int {
     let uint_count = Int(const_size) / MemoryLayout<UInt>.stride
     for i in 0..<uint_count {
         if ptr[i] == UInt(bitPattern: key_ptr) {
-            // Verify we don't read past the end of the __const section
-            // Reading UInt16 at byte offset 0x9a from ptr.advanced(by: i) requires 0x9a + 2 bytes available
             let byte_offset = i * MemoryLayout<UInt>.stride + 0x9a
             guard byte_offset + MemoryLayout<UInt16>.stride <= Int(const_size) else {
+                _cache_lock.lock()
                 _cache_data_offsets[key] = 0
+                _cache_lock.unlock()
                 return 0
             }
-            
             let offset = Int((ptr.advanced(by: i).withMemoryRebound(to: UInt16.self, capacity: 1) { $0[0x9a / 2] }) << 3)
+            _cache_lock.lock()
             _cache_data_offsets[key] = offset
+            _cache_lock.unlock()
             return offset
         }
     }
 
+    _cache_lock.lock()
     _cache_data_offsets[key] = 0
+    _cache_lock.unlock()
     return 0
 }

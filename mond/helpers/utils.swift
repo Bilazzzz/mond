@@ -68,25 +68,20 @@ let respringDocument = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <style>
-body { background: black; margin: 0; padding: 0; }
+body { background: black; margin: 0; padding: 0; overflow: hidden; }
 </style>
 </head>
 <body>
 <script>
 (function() {
     var container = document.createElement('div');
-    container.style.cssText = 'perspective: 1px; perspective-origin: 9999999% 9999999%;';
-    
-    var el = document.createElement('div');
-    el.style.cssText = 'transform: translateZ(9999999px); width: 1px; height: 1px;';
-    
-    container.appendChild(el);
+    container.style.cssText = 'perspective:1px;perspective-origin:9999999% 9999999%;position:fixed;top:0;left:0;width:100%;height:100%;';
+    for (var i = 0; i < 50; i++) {
+        var el = document.createElement('div');
+        el.style.cssText = 'transform:translateZ(' + (9999999 + i * 10000) + 'px);width:1px;height:1px;position:absolute;';
+        container.appendChild(el);
+    }
     document.body.appendChild(container);
-    
-    setTimeout(function() {
-        document.body.removeChild(container);
-        location.reload();
-    }, 300);
 })();
 </script>
 </body>
@@ -99,7 +94,7 @@ struct RespringView: UIViewRepresentable {
         let prefs = WKWebpagePreferences()
         prefs.allowsContentJavaScript = true
         config.defaultWebpagePreferences = prefs
-        
+
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.isOpaque = false
         webView.backgroundColor = .black
@@ -114,8 +109,8 @@ struct RespringView: UIViewRepresentable {
 final class AppState: ObservableObject {
     @Published var show_respring = false
     @Published var exploit_succeeded = false
-    @Published var poster_files: [URL] = []
     @Published var exploit_already_granted = false
+    @Published var poster_files: [URL] = []
 
     func respring() {
         show_respring = true
