@@ -65,45 +65,39 @@ enum TweakPaths {
 let respringDocument = """
 <!DOCTYPE html>
 <html>
-    <body>
-        <!--  big credit to @neonmodder123  -->
-        <iframe id="frame" srcdoc="" sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-presentation allow-scripts"></iframe>
-        <script>
-            const frame = document.getElementById('frame');
-            const respringScript = `
-                <html>
-                <body>
-                    <script>
-                        const container = document.createElement('div');
-                        container.style.cssText = 'perspective: 1px; perspective-origin: 9999999% 9999999%;';
-                        document.body.appendChild(container);
-    
-                        for (let i = 0; i < 500; i++) {
-                            let d = document.createElement('div');
-                            d.style.cssText = 'position: absolute; width: 100vw; height: 100vh; backdrop-filter: blur(100px); -webkit-backdrop-filter: blur(100px); transform: translate3d(100000px, 100000px, ' + i + 'px) rotateY(90deg);';
-                            container.appendChild(d);
-                        }
-    
-                        setInterval(() => {
-                            navigator.share({ title: 'R', text: 'R'.repeat(100000) }).catch(() => {});
-                            let x = new Uint8Array(1024 * 1024 * 10);
-                            crypto.getRandomValues(x);
-                        }, 0);
-                    <\\/script>
-                </body>
-                </html>
-            `;
-    
-            frame.srcdoc = respringScript;
-        </script>
-    </body>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<style>body { background: black; }</style>
+</head>
+<body>
+<script>
+(function() {
+    var el = document.createElement('div');
+    el.style.position = 'fixed';
+    el.style.top = '-9999px';
+    el.style.left = '-9999px';
+    el.style.width = '1px';
+    el.style.height = '1px';
+    el.style.overflow = 'hidden';
+    el.style.perspective = '1px';
+    el.style.perspectiveOrigin = '9999999% 9999999%';
+    el.innerHTML = '<div style="transform: translateZ(9999999px);"></div>';
+    document.body.appendChild(el);
+    setTimeout(function() {
+        window.location.reload();
+    }, 200);
+})();
+</script>
+</body>
 </html>
 """
 
 struct RespringView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView()
-        WKWebpagePreferences().allowsContentJavaScript = true
+        let prefs = WKWebpagePreferences()
+        prefs.allowsContentJavaScript = true
+        webView.configuration.defaultWebpagePreferences = prefs
         return webView
     }
 
@@ -116,6 +110,7 @@ final class AppState: ObservableObject {
     @Published var show_respring = false
     @Published var exploit_succeeded = false
     @Published var poster_files: [URL] = []
+    @Published var exploit_already_granted = false
 
     func respring() {
         show_respring = true
