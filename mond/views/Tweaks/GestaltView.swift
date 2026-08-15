@@ -384,7 +384,14 @@ struct GestaltView: View {
     
     private func mg_apply_internal() {
         do {
+            // Reload dict if it was cleared after previous apply
+            if mg_dict_now.count == 0 {
+                let mg_url_now = URL(fileURLWithPath: TweakPaths.gestalt)
+                mg_dict_now = try NSMutableDictionary(contentsOf: mg_url_now, error: ())
+            }
+            
             let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
+            mg_dict_now["CacheExtra"] = cache_extra
             
             if !product_type.isEmpty {
                 cache_extra["h9jDsbgj7xIVeIQ8S3/X3Q"] = product_type
@@ -392,6 +399,8 @@ struct GestaltView: View {
             }
             
             let artwork_dict = cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
+            cache_extra["oPeik/9e8lQWMszEjbPzng"] = artwork_dict
+            
             artwork_dict["ArtworkDeviceSubType"] = selected_st_value
             print("(mg) set ArtworkDeviceSubType to: \(selected_st_value)")
             
@@ -406,7 +415,7 @@ struct GestaltView: View {
             let originalSize = (attrs?[.size] as? UInt64) ?? 0
             let newSize = UInt64(data.count)
             
-            if newSize < originalSize / 2 {
+            if newSize < originalSize / 2 && originalSize > 0 {
                 print("(mg) WARNING: New file size (\(newSize)) is much smaller than original (\(originalSize))")
             }
             
@@ -420,7 +429,6 @@ struct GestaltView: View {
                 print("(mg) ERROR: File size mismatch after write (expected \(newSize), got \(writtenSize))")
             }
             
-            mg_dict_now = NSMutableDictionary()
             enable_devicename = false
             
             Alertinator.shared.alert(
@@ -446,6 +454,9 @@ struct GestaltView: View {
             let backup_data = try Data(contentsOf: backup_url)
             try mg_write(backup_data)
 
+            // Reload dict from backup
+            mg_dict_now = try NSMutableDictionary(contentsOf: backup_url, error: ())
+
             print("(mg) successfully reverted mobilegestalt!")
             Alertinator.shared.alert(title: "Successfully reverted Gestalt tweaks!", body: "Reboot your device for changes to take effect.")
         } catch {
@@ -469,10 +480,13 @@ struct GestaltView: View {
         }
     }
     
+    // MARK: - Key Bindings
+    
     private func mg_key_binding_int(_ keys: [String]) -> Binding<Bool> {
         return Binding(get: {
-            guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary,
-                  let value = cache_extra[keys.first!] as? Int else {
+            guard let first_key = keys.first,
+                  let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary,
+                  let value = cache_extra[first_key] as? Int else {
                 return false
             }
             
@@ -492,8 +506,9 @@ struct GestaltView: View {
     
     private func mg_key_binding_array(_ keys: [String]) -> Binding<Bool> {
         return Binding(get: {
-            guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary,
-                  let value = cache_extra[keys.first!] as? [Int] else {
+            guard let first_key = keys.first,
+                  let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary,
+                  let value = cache_extra[first_key] as? [Int] else {
                 return false
             }
             
@@ -532,6 +547,13 @@ struct GestaltView: View {
         }, set: { enabled in
             guard let cache_data = self.mg_dict_now["CacheData"] as? NSMutableData,
                   let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else {
+                return
+            }
+            
+            // Bounds check before writing to prevent crash
+            guard value_off > 0,
+                  value_off + MemoryLayout<Int>.stride <= cache_data.length else {
+                print("(mg) ERROR: trollpad offset \(value_off) out of bounds (data length: \(cache_data.length))")
                 return
             }
     
@@ -628,11 +650,22 @@ struct GestaltView: View {
         return Binding(
             get: {
                 guard let cache_data = self.mg_dict_now["CacheData"] as? NSMutableData else { return false }
-                
+                guard off_apple_internal_install > 0,
+                      off_apple_internal_install + MemoryLayout<Int>.stride <= cache_data.length else {
+                    return false
+                }
                 return cache_data.bytes.load(fromByteOffset: off_apple_internal_install, as: Int.self) == 1
             },
             set: { enabled in
                 guard let cache_data = self.mg_dict_now["CacheData"] as? NSMutableData else { return }
+                
+                let offsets = [off_apple_internal_install, off_has_internal_settings_bundle, off_internal_build]
+                for offset in offsets {
+                    guard offset > 0, offset + MemoryLayout<Int>.stride <= cache_data.length else {
+                        print("(mg) ERROR: internal binding offset \(offset) out of bounds (data length: \(cache_data.length))")
+                        return
+                    }
+                }
                 
                 cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_apple_internal_install, as: Int.self)
                 cache_data.mutableBytes.storeBytes(of: enabled ? 1 : 0, toByteOffset: off_has_internal_settings_bundle, as: Int.self)
@@ -640,6 +673,8 @@ struct GestaltView: View {
             }
         )
     }
+    
+    // MARK: - Helpers
     
     private func is_device_good() -> Bool {
         let supported: [String] = ["iPhone15,2", "iPhone15,3", "iPhone15,4", "iPhone15,5", "iPhone16,1", "iPhone16,2", "iPhone17,3", "iPhone17,4", "iPhone17,1", "iPhone17,2", "iPhone18,3", "iPhone18,1", "iPhone18,2", "iPhone17,5"]
