@@ -67,25 +67,26 @@ let respringDocument = """
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<style>body { background: black; }</style>
+<style>
+body { background: black; margin: 0; padding: 0; }
+</style>
 </head>
 <body>
 <script>
 (function() {
+    var container = document.createElement('div');
+    container.style.cssText = 'perspective: 1px; perspective-origin: 9999999% 9999999%;';
+    
     var el = document.createElement('div');
-    el.style.position = 'fixed';
-    el.style.top = '-9999px';
-    el.style.left = '-9999px';
-    el.style.width = '1px';
-    el.style.height = '1px';
-    el.style.overflow = 'hidden';
-    el.style.perspective = '1px';
-    el.style.perspectiveOrigin = '9999999% 9999999%';
-    el.innerHTML = '<div style="transform: translateZ(9999999px);"></div>';
-    document.body.appendChild(el);
+    el.style.cssText = 'transform: translateZ(9999999px); width: 1px; height: 1px;';
+    
+    container.appendChild(el);
+    document.body.appendChild(container);
+    
     setTimeout(function() {
-        window.location.reload();
-    }, 200);
+        document.body.removeChild(container);
+        location.reload();
+    }, 300);
 })();
 </script>
 </body>
@@ -94,10 +95,14 @@ let respringDocument = """
 
 struct RespringView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
+        let config = WKWebViewConfiguration()
         let prefs = WKWebpagePreferences()
         prefs.allowsContentJavaScript = true
-        webView.configuration.defaultWebpagePreferences = prefs
+        config.defaultWebpagePreferences = prefs
+        
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.isOpaque = false
+        webView.backgroundColor = .black
         return webView
     }
 
@@ -128,6 +133,7 @@ final class AppState: ObservableObject {
 
         _ = url.startAccessingSecurityScopedResource()
         poster_files.append(url)
+        print("(pb) added file: \(url.lastPathComponent)")
     }
 
     func remove_poster_files(at offsets: IndexSet) {
