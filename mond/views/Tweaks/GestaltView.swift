@@ -25,6 +25,8 @@ struct GestaltView: View {
     @State private var product_type: String = ""
     
     @State private var show_settings: Bool = false
+    @State private var showCompatibilityAlert: Bool = false
+    @State private var compatibilityMessage: String = ""
     
     var selected_st_value: Int {
         switch selected_st {
@@ -149,7 +151,7 @@ struct GestaltView: View {
                         PlainAlert(
                             title: "Charge Limit Warning",
                             icon: "exclamationmark.triangle.fill",
-                            text: "Charge Limit requires device spoofing to iPhone 15 Pro or newer on your device.",
+                            text: "Charge Limit requires device spoofing to iPhone 15 Pro or newer on your device. Enable spoofing in the Eligibility section below.",
                             color: Color.orange
                         )
                     }
@@ -299,6 +301,14 @@ struct GestaltView: View {
             .sheet(isPresented: $show_settings) {
                 SettingsView()
             }
+            .alert("Compatibility Warning", isPresented: $showCompatibilityAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Continue", role: .destructive) {
+                    mg_apply_internal()
+                }
+            } message: {
+                Text(compatibilityMessage)
+            }
         }
     }
     
@@ -382,36 +392,24 @@ struct GestaltView: View {
         let compatibility = Diagnostics.checkTweakCompatibility()
         
         // Проверяем Charge Limit
-        if let chargeLimitEnabled = mg_dict_now["CacheExtra"]?["37NVydb//GP/GrhuTN+exg"] as? Int,
+        if let cacheExtra = mg_dict_now["CacheExtra"] as? NSMutableDictionary,
+           let chargeLimitEnabled = cacheExtra["37NVydb//GP/GrhuTN+exg"] as? Int,
            chargeLimitEnabled == 1,
            compatibility["Charge Limit"] == .requiresSpoof,
            product_type == machine_name() {
-            Alertinator.shared.alert(
-                title: "Charge Limit Warning",
-                body: "Charge Limit may not work on your device without spoofing to iPhone 15 Pro or newer. Do you want to continue anyway?",
-                actionLabel: "Continue",
-                cancelLabel: "Cancel",
-                cancelAction: { return },
-                action: {
-                    self.mg_apply_internal()
-                }
-            )
+            
+            compatibilityMessage = "Charge Limit may not work on your device without spoofing to iPhone 15 Pro or newer. Enable spoofing in the Eligibility section or continue anyway?"
+            showCompatibilityAlert = true
             return
         }
         
         // Проверяем Apple Intelligence + Siri
-        if let aiEnabled = mg_dict_now["CacheExtra"]?["A62OafQ85EJAiiqKn4agtg"] as? Int,
+        if let cacheExtra = mg_dict_now["CacheExtra"] as? NSMutableDictionary,
+           let aiEnabled = cacheExtra["A62OafQ85EJAiiqKn4agtg"] as? Int,
            aiEnabled == 1 {
-            Alertinator.shared.alert(
-                title: "Apple Intelligence Warning",
-                body: "Enabling Apple Intelligence spoof may break Siri functionality on some devices. This is a known limitation. Do you want to continue?",
-                actionLabel: "Continue",
-                cancelLabel: "Cancel",
-                cancelAction: { return },
-                action: {
-                    self.mg_apply_internal()
-                }
-            )
+            
+            compatibilityMessage = "Enabling Apple Intelligence spoof may break Siri functionality on some devices. This is a known limitation. Do you want to continue?"
+            showCompatibilityAlert = true
             return
         }
         
@@ -438,7 +436,8 @@ struct GestaltView: View {
             
             let data = try PropertyListSerialization.data(fromPropertyList: mg_dict_now, format: .xml, options: 0)
             
-            let originalSize = (try? FileManager.default.attributesOfItem(atPath: TweakPaths.gestalt))[.size] as? UInt64 ?? 0
+            let attrs = try? FileManager.default.attributesOfItem(atPath: TweakPaths.gestalt)
+            let originalSize = (attrs?[.size] as? UInt64) ?? 0
             let newSize = UInt64(data.count)
             
             if newSize < originalSize / 2 {
@@ -449,7 +448,8 @@ struct GestaltView: View {
             
             print("(mg) ✓ Successfully overwrote mobilegestalt (\(newSize) bytes)")
             
-            let writtenSize = (try? FileManager.default.attributesOfItem(atPath: TweakPaths.gestalt))[.size] as? UInt64 ?? 0
+            let writtenAttrs = try? FileManager.default.attributesOfItem(atPath: TweakPaths.gestalt)
+            let writtenSize = (writtenAttrs?[.size] as? UInt64) ?? 0
             if writtenSize != newSize {
                 print("(mg) ERROR: File size mismatch after write (expected \(newSize), got \(writtenSize))")
             }
@@ -503,7 +503,7 @@ struct GestaltView: View {
         }
     }
     
-    private func mg_key_binding<T: Equatable>(_ keys: [String], type: T.Type = Int.self, default_val: T? = 0, on_val: T? = 1) -> Binding<Bool>  {
+    private func mg_key_binding<T: Equatable>(_ keys: [String], type: T.Type? = nil, default_val: T? = nil, on_val: T? = nil) -> Binding<Bool> {
         return Binding(get: {
             guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary,
                   let on_val,
@@ -589,17 +589,12 @@ struct GestaltView: View {
                 
                 if enabled {
                     Alertinator.shared.alert(
-                        title: "Region Restrictions Warning",
-                        body: "This will set region to US and model to LL/A. Some devices may require a respring or reboot for changes to take effect. Do not use this to bypass regional laws.",
-                        actionLabel: "Continue",
-                        cancelLabel: "Cancel",
-                        cancelAction: { return },
-                        action: {
-                            cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] = "US"
-                            cache_extra["zHeENZu+wbg7PUprwNwBWg"] = "LL/A"
-                            cache_extra["z/aOP8lqlO4y0Y3nXV8jQ"] = "LL/A"
-                        }
+                        title: "Region Restrictions",
+                        body: "This will set region to US and model to LL/A. Some devices may require a respring or reboot for changes to take effect."
                     )
+                    cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] = "US"
+                    cache_extra["zHeENZu+wbg7PUprwNwBWg"] = "LL/A"
+                    cache_extra["z/aOP8lqlO4y0Y3nXV8jQ"] = "LL/A"
                 } else {
                     cache_extra.removeObject(forKey: "h63QSdBCiT/z0WU6rdQv6Q")
                     cache_extra.removeObject(forKey: "zHeENZu+wbg7PUprwNwBWg")
