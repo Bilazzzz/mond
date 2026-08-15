@@ -32,7 +32,7 @@ struct mond: App {
             setvbuf(stdout, nil, _IONBF, 0)
             dup2(pipe.fileHandleForWriting.fileDescriptor, STDOUT_FILENO)
         }
-        // FIX: key matches ContentView @AppStorage("method")
+        // FIX: key must match ContentView @AppStorage("method")
         UserDefaults.standard.register(defaults: ["method": "bad_query"])
         if UserDefaults.standard.bool(forKey: "ka_on") {
             keep_alive()
@@ -61,7 +61,7 @@ struct mond: App {
                     if !is_supported() {
                         Alertinator.shared.alert(title: "Not supported!", body: "Your iOS version may not be supported by mond.\nMond only supports iOS 27.0 beta 1 - beta 4.")
                     }
-                    // FIX: grant only once
+                    // FIX: grant only once, not every onAppear
                     if !state.exploit_already_granted {
                         grant_all(state: state)
                         state.exploit_already_granted = true
