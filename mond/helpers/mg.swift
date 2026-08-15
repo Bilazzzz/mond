@@ -10,7 +10,6 @@ import Darwin
 import MachO
 import UIKit
 
-// FIX: thread-safe cache
 private let _cache_lock = NSLock()
 private var _cache_data_offsets: [String: Int] = [:]
 private var _mg_dlopen_done = false
@@ -45,15 +44,17 @@ func cache_data_offset(_ key: String) -> Int {
     guard let cstring = getsectiondata(header, "__TEXT", "__cstring", &text_size) else { return 0 }
     let cstr = cstring.withMemoryRebound(to: CChar.self, capacity: Int(text_size)) { $0 }
 
-    // FIX: check that key is actually found
+    // FIX: use UnsafePointer<CChar> for both so assignment works
     var key_ptr: UnsafePointer<CChar>? = nil
-    var cursor = cstr
-    while Int(cursor - cstr) < Int(text_size) {
+    let text_end = cstr.advanced(by: Int(text_size))
+    var cursor: UnsafePointer<CChar> = UnsafePointer(cstr)
+
+    while cursor < text_end {
         if String(cString: cursor) == key {
             key_ptr = cursor
             break
         }
-        cursor += strlen(cursor) + 1
+        cursor = cursor.advanced(by: strlen(cursor) + 1)
     }
 
     guard let key_ptr else {
