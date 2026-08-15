@@ -143,29 +143,19 @@ struct GestaltView: View {
                 
                 // Software-Oriented Features
                 Section {
-                    PlainToggle(text: "Dynamic Island", minSupportedVersion: 19.0, isOn: mg_key_binding(["YlEtTtHlNesRBMal1CqRaA"]))
-                    PlainToggle(text: "Always On Display", minSupportedVersion: 18.0, isOn: mg_key_binding(["j8/Omm6s1lsmTDFsXjsBfA", "2OOJf1VhaM7NxfRok3HbWQ"]))
-                    PlainToggle(text: "AOD Vibrancy", minSupportedVersion: 18.0, isOn: mg_key_binding(["yhHcB0iH0d1XzPO/CFd3ow"]))
-                    
-                    if Diagnostics.checkTweakCompatibility()["Charge Limit"] == .requiresSpoof {
-                        PlainAlert(
-                            title: "Charge Limit Warning",
-                            icon: "exclamationmark.triangle.fill",
-                            text: "Charge Limit requires device spoofing to iPhone 15 Pro or newer on your device. Enable spoofing in the Eligibility section below.",
-                            color: Color.orange
-                        )
-                    }
-                    PlainToggle(text: "Charge Limit", minSupportedVersion: 17.0, isOn: mg_key_binding(["37NVydb//GP/GrhuTN+exg"]))
-                    
-                    PlainToggle(text: "Boot Chime", isOn: mg_key_binding(["QHxt+hGLaBPbQJbXiUJX3w"]))
-                    PlainToggle(text: "Liquid Glass LPM", minSupportedVersion: 19.0, isOn: mg_key_binding(["SAGvsp6O6kAQ4fEfDJpC4Q"]))
+                    PlainToggle(text: "Dynamic Island", minSupportedVersion: 19.0, isOn: mg_key_binding_int(["YlEtTtHlNesRBMal1CqRaA"]))
+                    PlainToggle(text: "Always On Display", minSupportedVersion: 18.0, isOn: mg_key_binding_int(["j8/Omm6s1lsmTDFsXjsBfA", "2OOJf1VhaM7NxfRok3HbWQ"]))
+                    PlainToggle(text: "AOD Vibrancy", minSupportedVersion: 18.0, isOn: mg_key_binding_int(["yhHcB0iH0d1XzPO/CFd3ow"]))
+                    PlainToggle(text: "Charge Limit", minSupportedVersion: 17.0, isOn: mg_key_binding_int(["37NVydb//GP/GrhuTN+exg"]))
+                    PlainToggle(text: "Boot Chime", isOn: mg_key_binding_int(["QHxt+hGLaBPbQJbXiUJX3w"]))
+                    PlainToggle(text: "Liquid Glass LPM", minSupportedVersion: 19.0, isOn: mg_key_binding_int(["SAGvsp6O6kAQ4fEfDJpC4Q"]))
                 } header: {
                     Label("Software-Oriented Features", systemImage: "gearshape")
                 }
                 
                 // Hardware-Oriented Features
                 Section {
-                    PlainToggle(text: "Camera Control", minSupportedVersion: 18.0, isOn: mg_key_binding(["CwvKxM2cEogD3p+HYgaW0Q", "oOV1jhJbdV3AddkcCg0AEA"]))
+                    PlainToggle(text: "Camera Control", minSupportedVersion: 18.0, isOn: mg_key_binding_int(["CwvKxM2cEogD3p+HYgaW0Q", "oOV1jhJbdV3AddkcCg0AEA"]))
                     
                     if doubleSystemVersion() >= 18.0 {
                         PlainToggle(
@@ -173,25 +163,25 @@ struct GestaltView: View {
                             infoType: .info,
                             infoMessage: "Enables Visual Intelligence (Camera Control long-press). Requires iOS 18.0+ and device spoofing to iPhone 17 Pro on older devices.",
                             minSupportedVersion: 18.0,
-                            isOn: mg_key_binding(["CwvKxM2cEogD3p+HYgaW0Q", "oOV1jhJbdV3AddkcCg0AEA", "VqhHQr2+VnB0K7H4R0xQ0g"])
+                            isOn: mg_key_binding_int(["CwvKxM2cEogD3p+HYgaW0Q", "oOV1jhJbdV3AddkcCg0AEA", "VqhHQr2+VnB0K7H4R0xQ0g"])
                         )
                     }
                     
-                    PlainToggle(text: "Action Button", minSupportedVersion: 17.0, isOn: mg_key_binding(["cT44WE1EohiwRzhsZ8xEsw"]))
-                    PlainToggle(text: "Crash Detection", isOn: mg_key_binding(["HCzWusHQwZDea6nNhaKndw"]))
+                    PlainToggle(text: "Action Button", minSupportedVersion: 17.0, isOn: mg_key_binding_int(["cT44WE1EohiwRzhsZ8xEsw"]))
+                    PlainToggle(text: "Crash Detection", isOn: mg_key_binding_int(["HCzWusHQwZDea6nNhaKndw"]))
                     
                     if hasHomeButton() {
-                        PlainToggle(text: "Enable Tap to Wake", isOn: mg_key_binding(["yZf3GTRMGTuwSV/lD7Cagw"]))
+                        PlainToggle(text: "Enable Tap to Wake", isOn: mg_key_binding_int(["yZf3GTRMGTuwSV/lD7Cagw"]))
                     }
                     
-                    PlainToggle(text: "Pulse Width Modulation", minSupportedVersion: 19.0, isOn: mg_key_binding(["6IejgN+1Fmu5/QrZFOIeNw"]))
+                    PlainToggle(text: "Pulse Width Modulation", minSupportedVersion: 19.0, isOn: mg_key_binding_int(["6IejgN+1Fmu5/QrZFOIeNw"]))
                 } header: {
                     Label("Hardware-Oriented Features", systemImage: "iphone")
                 }
                 
                 // Eligibility
                 Section {
-                    PlainToggle(text: "Security Research Device UI", minSupportedVersion: 26.0, isOn: mg_key_binding(["XYlJKKkj2hztRP1NWWnhlw"]))
+                    PlainToggle(text: "Security Research Device UI", minSupportedVersion: 26.0, isOn: mg_key_binding_int(["XYlJKKkj2hztRP1NWWnhlw"]))
                     
                     PlainToggle(
                         text: "Disable Region Restrictions",
@@ -255,11 +245,11 @@ struct GestaltView: View {
                 Section {
                     let cache_extra = mg_dict_now["CacheExtra"] as? NSMutableDictionary
                     
-                    PlainToggle(text: "Allow Installing iPadOS Apps", isOn: mg_key_binding(["9MZ5AdH43csAUajl/dU+IQ"], type: [Int].self, default_val: [1], on_val: [1, 2]))
-                    PlainToggle(text: "Apple Pencil Settings", isOn: mg_key_binding(["yhHcB0iH0d1XzPO/CFd3ow"]))
+                    PlainToggle(text: "Allow Installing iPadOS Apps", isOn: mg_key_binding_array(["9MZ5AdH43csAUajl/dU+IQ"]))
+                    PlainToggle(text: "Apple Pencil Settings", isOn: mg_key_binding_int(["yhHcB0iH0d1XzPO/CFd3ow"]))
                     
                     if UIDevice.current.userInterfaceIdiom == .pad {
-                        PlainToggle(text: "Stage Manager", isOn: mg_key_binding(["qeaj75wk3HF4DwQ8qbIi7g"]))
+                        PlainToggle(text: "Stage Manager", isOn: mg_key_binding_int(["qeaj75wk3HF4DwQ8qbIi7g"]))
                     }
                     
                     PlainToggle(
@@ -275,9 +265,9 @@ struct GestaltView: View {
                 
                 // Internal
                 Section {
-                    PlainToggle(text: "Internal Storage", isOn: mg_key_binding(["LBJfwOEzExRxzlAnSuI7eg"]))
+                    PlainToggle(text: "Internal Storage", isOn: mg_key_binding_int(["LBJfwOEzExRxzlAnSuI7eg"]))
                     PlainToggle(text: "Internal Features", isOn: mg_internal_binding())
-                    PlainToggle(text: "Metal HUD in All Apps", isOn: mg_key_binding(["EqrsVvjcYDdxHBiQmGhAWw"]))
+                    PlainToggle(text: "Metal HUD in All Apps", isOn: mg_key_binding_int(["EqrsVvjcYDdxHBiQmGhAWw"]))
                 } header: {
                     Label("Internal", systemImage: "ant")
                 }
@@ -389,30 +379,6 @@ struct GestaltView: View {
     }
     
     private func mg_apply() {
-        let compatibility = Diagnostics.checkTweakCompatibility()
-        
-        // Проверяем Charge Limit
-        if let cacheExtra = mg_dict_now["CacheExtra"] as? NSMutableDictionary,
-           let chargeLimitEnabled = cacheExtra["37NVydb//GP/GrhuTN+exg"] as? Int,
-           chargeLimitEnabled == 1,
-           compatibility["Charge Limit"] == .requiresSpoof,
-           product_type == machine_name() {
-            
-            compatibilityMessage = "Charge Limit may not work on your device without spoofing to iPhone 15 Pro or newer. Enable spoofing in the Eligibility section or continue anyway?"
-            showCompatibilityAlert = true
-            return
-        }
-        
-        // Проверяем Apple Intelligence + Siri
-        if let cacheExtra = mg_dict_now["CacheExtra"] as? NSMutableDictionary,
-           let aiEnabled = cacheExtra["A62OafQ85EJAiiqKn4agtg"] as? Int,
-           aiEnabled == 1 {
-            
-            compatibilityMessage = "Enabling Apple Intelligence spoof may break Siri functionality on some devices. This is a known limitation. Do you want to continue?"
-            showCompatibilityAlert = true
-            return
-        }
-        
         mg_apply_internal()
     }
     
@@ -503,21 +469,41 @@ struct GestaltView: View {
         }
     }
     
-    private func mg_key_binding<T: Equatable>(_ keys: [String], type: T.Type? = nil, default_val: T? = nil, on_val: T? = nil) -> Binding<Bool> {
+    private func mg_key_binding_int(_ keys: [String]) -> Binding<Bool> {
         return Binding(get: {
             guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary,
-                  let on_val,
-                  let value = cache_extra[keys.first!] as? T? else {
+                  let value = cache_extra[keys.first!] as? Int else {
                 return false
             }
             
-            return value == on_val
+            return value == 1
         }, set: { enabled in
             guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
             
             for key in keys {
                 if enabled {
-                    cache_extra[key] = on_val
+                    cache_extra[key] = 1
+                } else {
+                    cache_extra.removeObject(forKey: key)
+                }
+            }
+        })
+    }
+    
+    private func mg_key_binding_array(_ keys: [String]) -> Binding<Bool> {
+        return Binding(get: {
+            guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary,
+                  let value = cache_extra[keys.first!] as? [Int] else {
+                return false
+            }
+            
+            return value.contains(1)
+        }, set: { enabled in
+            guard let cache_extra = self.mg_dict_now["CacheExtra"] as? NSMutableDictionary else { return }
+            
+            for key in keys {
+                if enabled {
+                    cache_extra[key] = [1, 2]
                 } else {
                     cache_extra.removeObject(forKey: key)
                 }
