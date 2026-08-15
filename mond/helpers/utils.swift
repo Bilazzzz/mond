@@ -90,14 +90,10 @@ body { background: black; margin: 0; padding: 0; overflow: hidden; }
 
 struct RespringView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
+        let webView = WKWebView()
         let prefs = WKWebpagePreferences()
         prefs.allowsContentJavaScript = true
-        config.defaultWebpagePreferences = prefs
-
-        let webView = WKWebView(frame: .zero, configuration: config)
-        webView.isOpaque = false
-        webView.backgroundColor = .black
+        webView.configuration.defaultWebpagePreferences = prefs
         return webView
     }
 
@@ -109,7 +105,6 @@ struct RespringView: UIViewRepresentable {
 final class AppState: ObservableObject {
     @Published var show_respring = false
     @Published var exploit_succeeded = false
-    @Published var exploit_already_granted = false
     @Published var poster_files: [URL] = []
 
     func respring() {
